@@ -2,6 +2,9 @@ import json, signal, sys
 from bottle import redirect, request, route, run, template, get, post, static_file
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
+
+sys.path.append('libs')
+
 from rgbDriver import RGBDriver, SingleLEDDriver
 from temp_humid_sensor import Thermostat
 
