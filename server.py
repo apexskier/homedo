@@ -9,7 +9,7 @@ from libs.thermostat.temp_humid_sensor import Thermostat
 targets = {
         'rgb1': RGBDriver(0, 1, 2),
         'led1': SingleLEDDriver(3),
-        'thermostat': Thermostat(17, 55)
+        'thermostat': Thermostat(17, 4, 55)
     }
 
 thermostat = targets['thermostat']
