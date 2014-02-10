@@ -1,9 +1,10 @@
 import json, signal, sys, os
-from bottle import redirect, request, route, run, template, get, post, static_file
+from bottle import redirect, request, route, run, template, get, post, static_file, debug
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
+import colorsys
 
-from libs.rgbLED.rgbDriver import RGBDriver, SingleLEDDriver
+from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
 from libs.thermostat.temp_humid_sensor import Thermostat
 
 targets = {
@@ -19,7 +20,7 @@ thermostat_thread.start()
 def sig_handler(signal, frame):
     print
     for target in targets:
-        targets[target].to_off()
+        targets[target].off()
     print("Waiting for Thermostat to finish.")
     thermostat_thread.join()
     sys.exit(0)
@@ -27,10 +28,23 @@ signal.signal(signal.SIGINT, sig_handler)
 
 @get('/')
 def index():
-    return template('index',
-            current_temp=thermostat.get_temp(),
-            last_time=thermostat.get_last_time(),
-            target_temp=thermostat.get_target())
+    context = {}
+    for key, item in targets.items():
+        driver_type = type(item)
+        context[key] = {
+                'val': item.get()
+            }
+        if driver_type == Thermostat:
+            context[key]['time'] = item.get_last_time()
+            context[key]['target'] = item.get_target()
+        elif driver_type == RGBDriver:
+            context[key]['hsv'] = colorsys.rgb_to_hsv(
+                    context[key]['val'][0] / 255,
+                    context[key]['val'][1] / 255,
+                    context[key]['val'][2] / 255
+                )
+        context[key]['type'] = str(driver_type)
+    return template('templates/index', ctx=context)
 
 @get('/control', apply=[websocket])
 def control(ws):
@@ -46,13 +60,33 @@ def control(ws):
                 action = data[u'action']
                 if action == 'set':
                     if driver_type == RGBDriver:
-                        driver.set_hex_color(data[u'value'])
-                    elif driver_type == SingleLEDDriver:
-                        driver.set_(data[u'value'])
-                    elif driver_type == Thermostat:
-                        driver.set_(data[u'value'])
+                        f = str(data[u'format'])
+                        c = driver.get()
+                        if f == 'hls':
+                            c = colorsys.hls_to_rgb(
+                                    data[u'value'][0],
+                                    data[u'value'][1],
+                                    data[u'value'][2]
+                                )
+                        elif f == 'hsl':
+                            c = colorsys.hls_to_rgb(
+                                    data[u'value'][0],
+                                    data[u'value'][2],
+                                    data[u'value'][1]
+                                )
+                        elif f == 'hsv':
+                            c = colorsys.hsv_to_rgb(
+                                    data[u'value'][0],
+                                    data[u'value'][1],
+                                    data[u'value'][2]
+                                )
+                        elif f == 'rgb':
+                            c = data[u'value']
+                        driver.set_rgb(c)
+                    else:
+                        driver.set(data[u'value'])
                 if action == 'off':
-                    driver.to_off()
+                    driver.off()
         else:
             break
 
@@ -60,4 +94,5 @@ def control(ws):
 def send_static(filename):
     return static_file(filename, root='static')
 
+debug(True)
 run(host='0.0.0.0', port=8080, server=GeventWebSocketServer)

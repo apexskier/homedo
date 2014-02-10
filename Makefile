@@ -1,10 +1,10 @@
 
-update-libs: libs/rgbLED libs/thermostat
-	(cd libs/rgbLED && git pull)
+update-libs: libs/ledDriver libs/thermostat
+	(cd libs/ledDriver && git pull)
 	(cd libs/thermostat && git pull && make)
 
-libs/rgbLED:
-	git clone git@github.com:apexskier/rgbLED libs/rgbLED
+libs/ledDriver:
+	git clone git@github.com:apexskier/ledDriver libs/ledDriver
 
 libs/thermostat:
 	git clone git@github.com:apexskier/thermostat libs/thermostat

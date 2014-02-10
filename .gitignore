@@ -1,1 +1,3 @@
 libs/*/*
+libs/ledDriver
+libs/thermostat
