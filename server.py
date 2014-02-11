@@ -1,5 +1,5 @@
 import json, signal, sys, os
-from bottle import redirect, request, route, run, template, get, post, static_file, debug
+from bottle import redirect, request, route, run, template, get, post, static_file, debug, response
 from bottle.ext.websocket import GeventWebSocketServer
 from bottle.ext.websocket import websocket
 import colorsys
@@ -10,7 +10,7 @@ from libs.thermostat.temp_humid_sensor import Thermostat
 targets = {
         'rgb1': RGBDriver(0, 1, 2),
         'led1': SingleLEDDriver(3),
-        'thermostat': Thermostat(17, 4, 55)
+        'thermostat': Thermostat(18, 4, 55)
     }
 
 thermostat = targets['thermostat']
@@ -44,7 +44,7 @@ def index():
                     context[key]['val'][2] / 255
                 )
         context[key]['type'] = str(driver_type)
-    return template('templates/index', ctx=context)
+    return template('templates/therm', ctx=context)
 
 @get('/control', apply=[websocket])
 def control(ws):
@@ -93,6 +93,61 @@ def control(ws):
 @route('/static/<filename:path>')
 def send_static(filename):
     return static_file(filename, root='static')
+
+
+"""
+API
+"""
+
+@get('/api/<target>')
+@get('/api/<target>/')
+def get_current(target):
+    ret = {}
+    if target in targets:
+        driver = targets[target]
+        response.content_type = 'application/json'
+        ret['val'] = driver.get()
+        driver_type = type(driver)
+        if driver_type == Thermostat:
+            ret['time'] = driver.get_last_time()
+    else:
+        response.status = 404
+
+    return json.dumps(ret)
+
+@get('/api/<target>/target')
+@get('/api/<target>/target/')
+def get_target(target):
+    ret = {}
+    if target in targets:
+        driver = targets[target]
+        response.content_type = 'application/json'
+        driver_type = type(driver)
+        if driver_type == Thermostat:
+            ret['val'] = driver.get_target()
+        else:
+            response.status = 404
+    else:
+        response.status = 404
+
+    return json.dumps(ret)
+
+@post('/api/<target>')
+@post('/api/<target>/')
+def set_target(target):
+    ret = {}
+    if target in targets:
+        driver = targets[target]
+        response.content_type = 'application/json'
+        data = json.loads(request.body.read())
+        val = data[u'val']
+        driver.set(val)
+        ret['status'] = 'ok'
+    else:
+        ret['status'] = 'fail'
+        response.status = 404
+
+    return json.dumps(ret)
 
 debug(True)
 run(host='0.0.0.0', port=8080, server=GeventWebSocketServer)
