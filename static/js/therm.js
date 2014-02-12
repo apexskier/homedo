@@ -28,8 +28,8 @@ $(document).ready(function() {
 
     var currentTempBar = currentTempContainer.append("rect")
         .attr("width", 20)
-        .attr("height", 0)
-        .attr("y", h)
+        .attr("height", 30)
+        .attr("y", h - 30)
         .attr("x", Math.round(w / 2) - 10)
         .attr("rx", 10)
         .attr("ry", 10)
@@ -42,10 +42,10 @@ $(document).ready(function() {
         .attr("y", h)
         .attr("x", w / 2 + 40);
     var currentTempHandle = currentTempContainer.append("rect")
-        .attr("width", 40)
+        .attr("width", 30)
         .attr("height", 30)
         .attr("y", h - 30)
-        .attr("x", Math.round(w / 2) - 20)
+        .attr("x", Math.round(w / 2) - 15)
         .attr("rx", 15)
         .attr("ry", 15)
         .attr("class", "current-temp-handle")
@@ -82,7 +82,7 @@ $(document).ready(function() {
 
     var sliderheight = parseFloat($('.target').innerHeight());
     var tarperc = 1 - (targettemp - bounds.bot) / (bounds.top - bounds.bot);
-    $('.target .handle').css('top', tarperc * (sliderheight - 30));
+    $('.target .handle').css('top', tarperc * (sliderheight - 30)).fadeIn(200);
     var $target = $('.target');
     function settarget() {
         $('.target .handle .text').text(Math.round(targettemp));

@@ -53,6 +53,9 @@ html, body,
     width: 20px;
     margin: 0 auto;
 }
+.target .handle {
+    display: none;
+}
 .target .inner {
     background-image: -webkit-linear-gradient(top, #ff8800 0%, #0088ff 100%);
 }

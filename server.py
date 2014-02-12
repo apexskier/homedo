@@ -8,19 +8,34 @@ from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
 from libs.thermostat.temp_humid_sensor import Thermostat
 
 targets = {
-        'rgb1': RGBDriver(0, 1, 2),
-        'led1': SingleLEDDriver(3),
-        'thermostat': Thermostat(18, 4, 55)
+        'rgb1': {
+            'name': "RGB Lights",
+            'key': 'rgb1',
+            'driver': RGBDriver(0, 1, 2),
+            'type': "rgbdriver"
+        },
+        'led1': {
+            'name': "LED Light strip",
+            'key': 'led1',
+            'driver': SingleLEDDriver(3),
+            'type': "leddriver"
+        },
+        'therm': {
+            'name': "Heat",
+            'key': 'therm',
+            'driver': Thermostat(18, 4, 55),
+            'type': "thermostat"
+        }
     }
 
-thermostat = targets['thermostat']
+thermostat = targets['therm']['driver']
 thermostat_thread = thermostat.run()
 thermostat_thread.start()
 
 def sig_handler(signal, frame):
     print
     for target in targets:
-        targets[target].off()
+        targets[target]['driver'].off()
     print("Waiting for Thermostat to finish.")
     thermostat_thread.join()
     sys.exit(0)
@@ -28,35 +43,32 @@ signal.signal(signal.SIGINT, sig_handler)
 
 @get('/')
 def index():
-    context = {}
-    for key, item in targets.items():
-        driver_type = type(item)
-        context[key] = {
-                'val': item.get()
-            }
+    context = targets
+    for key, item in context.items():
+        driver_type = type(item['driver'])
+        item['val'] = item['driver'].get()
         if driver_type == Thermostat:
-            context[key]['time'] = item.get_last_time()
-            context[key]['target'] = item.get_target()
+            item['time'] = item['driver'].get_last_time()
+            item['target'] = item['driver'].get_target()
         elif driver_type == RGBDriver:
-            context[key]['hsv'] = colorsys.rgb_to_hsv(
-                    context[key]['val'][0] / 255,
-                    context[key]['val'][1] / 255,
-                    context[key]['val'][2] / 255
+            item['hsv'] = colorsys.rgb_to_hsv(
+                    item['val'][0] / 255,
+                    item['val'][1] / 255,
+                    item['val'][2] / 255
                 )
-        context[key]['type'] = str(driver_type)
     return template('templates/therm', ctx=context)
 
 @get('/rgb')
 def rgb():
     context = {}
     for key, item in targets.items():
-        driver_type = type(item)
+        driver_type = type(item['driver'])
         context[key] = {
-                'val': item.get()
+                'val': item['driver'].get()
             }
         if driver_type == Thermostat:
-            context[key]['time'] = item.get_last_time()
-            context[key]['target'] = item.get_target()
+            context[key]['time'] = item['driver'].get_last_time()
+            context[key]['target'] = item['driver'].get_target()
         elif driver_type == RGBDriver:
             context[key]['hsv'] = colorsys.rgb_to_hsv(
                     context[key]['val'][0] / 255,
@@ -75,7 +87,7 @@ def control(ws):
             data = json.loads(message)
             driver = None
             if u'target' in data:
-                driver = targets[str(data[u'target'])]
+                driver = targets[str(data[u'target'])]['driver']
                 driver_type = type(driver)
                 action = data[u'action']
                 if action == 'set':
@@ -84,28 +96,51 @@ def control(ws):
                         c = driver.get()
                         if f == 'hls':
                             c = colorsys.hls_to_rgb(
-                                    data[u'value'][0],
-                                    data[u'value'][1],
-                                    data[u'value'][2]
+                                    data[u'val'][0],
+                                    data[u'val'][1],
+                                    data[u'val'][2]
                                 )
                         elif f == 'hsl':
                             c = colorsys.hls_to_rgb(
-                                    data[u'value'][0],
-                                    data[u'value'][2],
-                                    data[u'value'][1]
+                                    data[u'val'][0],
+                                    data[u'val'][2],
+                                    data[u'val'][1]
                                 )
                         elif f == 'hsv':
                             c = colorsys.hsv_to_rgb(
-                                    data[u'value'][0],
-                                    data[u'value'][1],
-                                    data[u'value'][2]
+                                    data[u'val'][0],
+                                    data[u'val'][1],
+                                    data[u'val'][2]
                                 )
                         elif f == 'rgb':
-                            c = data[u'value']
+                            c = data[u'val']
                         driver.set_rgb(c)
                     else:
-                        driver.set(data[u'value'])
-                if action == 'off':
+                        driver.set(data[u'val'])
+                elif action == 'get':
+                    ret = {}
+                    if driver_type == RGBDriver:
+                        f = str(data[u'format'])
+                        c = driver.get()
+                        if f == 'hsl':
+                            ret['val'] = colorsys.rgb_to_hsl(
+                                    c[0],
+                                    c[1],
+                                    c[2]
+                                )
+                        elif f == 'hsv':
+                            ret['val'] = colorsys.rgb_to_hsv(
+                                    c[0],
+                                    c[1],
+                                    c[2]
+                                )
+                        elif f == 'rgb':
+                            ret['val'] = c
+                    else:
+                        ret['val'] = driver.get()
+                    ws.send(json.dumps(ret))
+                    print("Sent message: " + json.dumps(ret))
+                elif action == 'off':
                     driver.off()
         else:
             break
@@ -124,7 +159,7 @@ API
 def get_current(target):
     ret = {}
     if target in targets:
-        driver = targets[target]
+        driver = targets[target]['driver']
         response.content_type = 'application/json'
         ret['val'] = driver.get()
         driver_type = type(driver)
@@ -140,7 +175,7 @@ def get_current(target):
 def get_target(target):
     ret = {}
     if target in targets:
-        driver = targets[target]
+        driver = targets[target]['driver']
         response.content_type = 'application/json'
         driver_type = type(driver)
         if driver_type == Thermostat:
@@ -157,7 +192,7 @@ def get_target(target):
 def set_target(target):
     ret = {}
     if target in targets:
-        driver = targets[target]
+        driver = targets[target]['driver']
         response.content_type = 'application/json'
         data = json.loads(request.body.read())
         val = data[u'val']
