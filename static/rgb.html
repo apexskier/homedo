@@ -1,0 +1,161 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title></title>
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1.0, maximum-scale=2.0, width=device-width">
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+            </div>
+        </div>
+        <div class="collapse navbar-collapse" id="top">
+        </div>
+    </div>
+    <div class="container-fluid content">
+        <div class="content-inner">
+            <div class="col-xs-4 hue">
+                <div class="inner">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="col-xs-4 sat">
+                <div class="inner">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="col-xs-4 vib">
+                <div class="inner">
+                    <div class="handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar navbar-default navbar-fixed-bottom" id="bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-6">
+                    <button class="btn btn-default navbar-btn btn-block">Off</button>
+                </div>
+                <div class="col-xs-6">
+
+                </div>
+            </div>
+        </div>
+        <div class="collapse navbar-collapse">
+        </div>
+    </div>
+
+    <script src="color-conversion-algorithms.js"></script>
+    <script src="jquery-2.1.0.min.js"></script>
+    <script src="draggabilly.pkgd.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
+    <script>
+        rgb1 = {
+            h: 0,
+            s: 1,
+            v: 1,
+            hsl: function() {
+                return hsvToHsl(rgb1.h, rgb1.s, rgb1.v)
+            }
+        }
+
+        function hslToHsv(h, s, l) {
+            var _rgb = hslToRgb(h, s, l)
+            return rgbToHsv(_rgb[0], _rgb[1], _rgb[2]);
+        }
+        function hsvToHsl(h, s, v) {
+            var _rgb = hsvToRgb(h, s, v)
+            return rgbToHsl(_rgb[0], _rgb[1], _rgb[2]);
+        }
+
+        sliderheight = parseFloat($('.hue .inner').innerHeight());
+
+        var $hue = $('.hue .inner');
+        function setHue() {
+            var col = rgb1.hsl();
+            var s = rgb1.hsl()[1] * 100;
+            var l = rgb1.hsl()[2] * 100;
+            $hue.css('background-image', "-webkit-linear-gradient(top," +
+                "hsl(0, "   + s + "%, " + l + "%) 0%," +
+                "hsl(40, "  + s + "%, " + l + "%) 11.1111%," +
+                "hsl(80, "  + s + "%, " + l + "%) 22.2222%," +
+                "hsl(120, " + s + "%, " + l + "%) 33.3333%," +
+                "hsl(160, " + s + "%, " + l + "%) 44.4444%," +
+                "hsl(200, " + s + "%, " + l + "%) 55.5556%," +
+                "hsl(240, " + s + "%, " + l + "%) 66.6667%," +
+                "hsl(280, " + s + "%, " + l + "%) 77.7778%," +
+                "hsl(320, " + s + "%, " + l + "%) 88.8889%," +
+                "hsl(360, " + s + "%, " + l + "%) 100%)");
+        }
+        setHue();
+        huehandle = new Draggabilly($hue.find(".handle").get(0), {
+            axis: 'y',
+            containment: '.hue .inner'
+        });
+        huehandle.on('dragMove', function(instance, e, pointer) {
+            //                                                                  v handle height
+            rgb1.h = instance.position.y / (sliderheight - 30);
+            setSat();
+            setVib();
+            setVis();
+        });
+
+        var $sat = $('.sat .inner');
+        function setSat() {
+            var fulls = hsvToHsl(rgb1.h, 1, rgb1.v);
+            var lows = hsvToHsl(rgb1.h, 0, rgb1.v);
+            $sat.css('background-image', "-webkit-linear-gradient(top," +
+                "hsl(" + (fulls[0] * 360) + ", 100%, " + (fulls[2] * 100) + "%) 0%," +
+                "hsl(" + (lows[0]  * 360) + ", 0%, "   + (lows[2]  * 100) + "%) 100%)");
+        }
+        setSat();
+        sathandle = new Draggabilly($sat.find(".handle").get(0), {
+            axis: 'y',
+            containment: '.sat .inner'
+        });
+        sathandle.on('dragMove', function(instance, e, pointer) {
+            rgb1.s = 1 - (instance.position.y / (sliderheight - 30));
+            setHue();
+            setVib();
+            setVis();
+        });
+
+        var $vib = $('.vib .inner');
+        function setVib() {
+            var fulls = hsvToHsl(rgb1.h, rgb1.s, 1);
+            var lows = hsvToHsl(rgb1.h, rgb1.s, 0);
+            $vib.css('background-image', "-webkit-linear-gradient(top," +
+                "hsl(" + (fulls[0] * 360) + ", " + (fulls[1] * 100) + "%, " + (fulls[2] * 100) + "%) 0%," +
+                "hsl(" + (lows[0]  * 360) + ", " + (lows[1]  * 100) + "%, " + (lows[2]  * 100) + "%) 100%)");
+        }
+        setVib();
+        vibhandle = new Draggabilly($vib.find(".handle").get(0), {
+            axis: 'y',
+            containment: '.vib .inner'
+        });
+        vibhandle.on('dragMove', function(instance, e, pointer) {
+            rgb1.v = 1 - (instance.position.y / (sliderheight - 20));
+            setHue();
+            setSat();
+            setVis();
+        });
+
+        function setVis() {
+            col = rgb1.hsl();
+            $('#bottom').css('background-color', "hsl(" +
+                (col[0] * 360) + ", " +
+                (col[1] * 100) + "%, " +
+                (col[2] * 100) + "%)");
+        }
+        setVis();
+    </script>
+</body>
+</html>
+

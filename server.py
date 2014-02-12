@@ -46,6 +46,26 @@ def index():
         context[key]['type'] = str(driver_type)
     return template('templates/therm', ctx=context)
 
+@get('/rgb')
+def rgb():
+    context = {}
+    for key, item in targets.items():
+        driver_type = type(item)
+        context[key] = {
+                'val': item.get()
+            }
+        if driver_type == Thermostat:
+            context[key]['time'] = item.get_last_time()
+            context[key]['target'] = item.get_target()
+        elif driver_type == RGBDriver:
+            context[key]['hsv'] = colorsys.rgb_to_hsv(
+                    context[key]['val'][0] / 255,
+                    context[key]['val'][1] / 255,
+                    context[key]['val'][2] / 255
+                )
+        context[key]['type'] = str(driver_type)
+    return template('templates/rgb', ctx=context)
+
 @get('/control', apply=[websocket])
 def control(ws):
     while True:

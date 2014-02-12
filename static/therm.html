@@ -1,0 +1,170 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title></title>
+    <meta name="viewport" content="user-scalable=yes, initial-scale=1.0, maximum-scale=2.0, width=device-width">
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+            </div>
+        </div>
+        <div class="collapse navbar-collapse" id="top">
+        </div>
+    </div>
+    <div class="container-fluid content">
+        <div class="content-inner">
+            <div class="col-xs-6" id="current-temp">
+            </div>
+            <div class="col-xs-6 target">
+                <div class="inner">
+                    <div class="handle">
+                        <span class="text"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="vib">
+            </div>
+        </div>
+    </div>
+    <div class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-6">
+                    <button class="btn btn-default navbar-btn btn-block">Off</button>
+                </div>
+                <div class="col-xs-6">
+                </div>
+            </div>
+        </div>
+        <div class="collapse navbar-collapse" id="bottom">
+        </div>
+    </div>
+
+    <script src="/static/color-conversion-algorithms.js"></script>
+    <script src="/static/jquery-2.1.0.min.js"></script>
+    <script src="/static/draggabilly.pkgd.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        if (!window.WebSocket) {
+            if (window.MozWebSocket) {
+                window.WebSocket = window.MozWebSocket;
+            } else {
+                console.log("No websockets. :()");
+            }
+        }
+        var arr = document.URL.split('/');
+        var result = arr[2];
+        ws = new WebSocket('ws://' + result + '/control');
+        ws.onopen = function(evt) {
+            console.log('Websocket connection opened.');
+        }
+        ws.onmessage = function(evt) {
+            data = JSON.parse(evt.data);
+        }
+        ws.onclose = function(evt) {
+            console.log('WebSocket connection closed.');
+        }
+
+        var currenttemp = 80;
+        var targettemp = 65;
+        var bounds = {
+            top: 85,
+            bot: 50
+        }
+        var curperc = (currenttemp - bounds.bot) / (bounds.top - bounds.bot);
+
+        var h = $("#current-temp").innerHeight();
+        var w = $("#current-temp").innerWidth() - 30;
+        var currentTempContainer = d3.select("#current-temp")
+        .append("svg")
+            .attr("width", w)
+            .attr("height", h);
+
+        var currentTempBar = currentTempContainer.append("rect")
+            .attr("width", 20)
+            .attr("height", 0)
+            .attr("y", h)
+            .attr("x", Math.round(w / 2) - 10)
+            .attr("rx", 10)
+            .attr("ry", 10)
+            .attr("class", "current-temp-bar")
+            .attr("fill", "#0088ff");
+        var currentTempText = currentTempContainer.append("text")
+            .attr("text-anchor", "middle")
+            .attr("class", "current-temp-text")
+            .attr("height", 20)
+            .attr("y", h)
+            .attr("x", w / 2 + 40);
+        var currentTempHandle = currentTempContainer.append("rect")
+            .attr("width", 40)
+            .attr("height", 30)
+            .attr("y", h - 30)
+            .attr("x", Math.round(w / 2) - 20)
+            .attr("rx", 15)
+            .attr("ry", 15)
+            .attr("class", "current-temp-handle")
+            .attr("fill", "#ccc");
+
+        currentTempText.transition()
+            .delay(100)
+            .duration(400)
+                .attr("y", function() {
+                    var bary = h - (curperc * h);
+                    return bary + 24;
+                })
+                .tween("text", function(d) {
+                    var i = d3.interpolate(this.height, d);
+                    return function(t) {
+                        this.textContent = Math.round(bounds.bot + (t * (currenttemp - bounds.bot)));
+                    };
+                });
+        currentTempBar.transition()
+            .delay(100)
+            .duration(400)
+                .attr("height", Math.round(curperc * h))
+                .attr("y", h - Math.round(curperc * h))
+                .attr("fill", function() {
+                    r = 255 * curperc;
+                    b = 255 - r;
+                    hex = "#" + Math.round(r).toString(16) + "88" + Math.round(b).toString(16);
+                    return hex;
+                });
+        currentTempHandle.transition()
+            .delay(100)
+            .duration(400)
+                .attr("y", h - Math.round(curperc * h));
+
+        var sliderheight = parseFloat($('.target').innerHeight());
+        var tarperc = 1 - (targettemp - bounds.bot) / (bounds.top - bounds.bot);
+        $('.target .handle').css('top', tarperc * (sliderheight - 30));
+        var $target = $('.target');
+        function settarget() {
+            $('.target .handle .text').text(Math.round(targettemp));
+        }
+        settarget();
+        targethandle = new Draggabilly($target.find(".handle").get(0), {
+            axis: 'y',
+            containment: '.target'
+        });
+        targethandle.on('dragMove', function(instance, e, pointer) {
+            targettemp = bounds.bot + (1 - (instance.position.y / (sliderheight - 30))) * (bounds.top - bounds.bot);
+            ws.send(JSON.stringify({
+                target: "thermostat",
+                action: "set",
+                value: targettemp
+            }));
+            settarget();
+        });
+    });
+    </script>
+</body>
+</html>

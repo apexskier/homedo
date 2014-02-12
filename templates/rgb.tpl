@@ -20,47 +20,49 @@
     </div>
     <div class="container-fluid content">
         <div class="content-inner">
-            <div class="col-xs-6" id="current-temp">
-            </div>
-            <div class="col-xs-6 target">
+            <div class="col-xs-4 hue">
                 <div class="inner">
-                    <div class="handle">
-                        <span class="text"></span>
-                    </div>
+                    <div class="handle"></div>
                 </div>
             </div>
-            <div class="vib">
+            <div class="col-xs-4 sat">
+                <div class="inner">
+                    <div class="handle"></div>
+                </div>
+            </div>
+            <div class="col-xs-4 vib">
+                <div class="inner">
+                    <div class="handle"></div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="navbar navbar-default navbar-fixed-bottom">
+    <div class="navbar navbar-default navbar-fixed-bottom" id="bottom">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-xs-6">
-                    <button class="btn btn-default navbar-btn btn-block">Off</button>
+                    <button id="off" class="btn btn-default navbar-btn btn-block">Off</button>
                 </div>
                 <div class="col-xs-6">
+
                 </div>
             </div>
         </div>
-        <div class="collapse navbar-collapse" id="bottom">
+        <div class="collapse navbar-collapse">
         </div>
     </div>
-
     <script src="/static/libs/color-conversion-algorithms.js"></script>
     <script src="/static/libs/jquery-2.1.0.min.js"></script>
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
     <script src="/static/libs/bootstrap/js/bootstrap.min.js"></script>
-    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        var currenttemp = {{ ctx['thermostat']['val'] if ctx['thermostat']['val'] else "0" }};
-        var targettemp = {{ ctx['thermostat']['target'] }};
-        var bounds = {
-            top: 85,
-            bot: 50
+        var rgb1 = {
+            h: {{ ctx['rgb1']['hsv'][0] }},
+            s: {{ ctx['rgb1']['hsv'][1] }},
+            v: {{ ctx['rgb1']['hsv'][2] }},
         }
-        var curperc = (currenttemp - bounds.bot) / (bounds.top - bounds.bot);
     </script>
-    <script src="/static/js/therm.js"></script>
+    <script src="/static/js/rgb.js"></script>
 </body>
 </html>
+
