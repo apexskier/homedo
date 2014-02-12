@@ -51,12 +51,12 @@
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        var currenttemp = {{ ctx['therm']['val'] if ctx['therm']['val'] else "0" }};
         var targettemp = {{ ctx['therm']['target'] }};
         var bounds = {
             top: 85,
             bot: 50
         }
+        var currenttemp = {{ ctx['therm']['val'] if ctx['therm']['val'] else "bounds.bot" }};
         var curperc = (currenttemp - bounds.bot) / (bounds.top - bounds.bot);
     </script>
     <script src="/static/js/therm.js"></script>

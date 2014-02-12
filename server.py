@@ -116,6 +116,7 @@ def control(ws):
                         driver.set(data[u'val'])
                 elif action == 'get':
                     ret = {}
+                    ret['action'] = 'get'
                     if driver_type == RGBDriver:
                         f = str(data[u'format'])
                         c = driver.get()
@@ -134,7 +135,6 @@ def control(ws):
                         elif f == 'rgb':
                             ret['val'] = c
                         ret['format'] = f
-                        ret['action'] = 'get'
                     else:
                         ret['val'] = driver.get()
                     ws.send(json.dumps(ret))
