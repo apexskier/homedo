@@ -15,10 +15,4 @@ wget https://gist.github.com/mjijackson/5311256/raw/12a6fefb5719b355ca4e7e151966
 # draggabilly
 wget http://draggabilly.desandro.com/draggabilly.pkgd.min.js
 
-# jquery
-wget http://code.jquery.com/jquery-2.1.0.min.js
-
-# jquery.stayInWebApp.min.js
-wget https://raw2.github.com/mrmoses/jQuery.stayInWebApp/master/jquery.stayInWebApp.min.js
-
 cd ..
