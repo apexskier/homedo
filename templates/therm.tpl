@@ -13,9 +13,11 @@
     <div class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header">
+                <p class="navbar-brand" href="#">Homedo&nbsp;&nbsp;
+                    <small><a href="/">{{ ctx['therm']['name']}}</a>&nbsp;&nbsp;
+                    <a href="/rgb">{{ ctx['rgb1']['name']}}</a></small>
+                </p>
             </div>
-        </div>
-        <div class="collapse navbar-collapse" id="top">
         </div>
     </div>
     <div class="container-fluid content">
@@ -51,10 +53,17 @@
     <script src="/static/libs/jquery-2.1.0.min.js"></script>
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
     <script src="/static/libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/static/libs/jquery.stayInWebApp.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        var currenttemp = {{ ctx['thermostat']['val'] if ctx['thermostat']['val'] else "0" }};
-        var targettemp = {{ ctx['thermostat']['target'] }};
+        $(document).ready(function() {
+            $(function() {
+                $.stayInWebApp('.navbar-header a');
+            });
+        });
+
+        var currenttemp = {{ ctx['therm']['val'] if ctx['therm']['val'] else "0" }};
+        var targettemp = {{ ctx['therm']['target'] }};
         var bounds = {
             top: 85,
             bot: 50

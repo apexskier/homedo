@@ -122,7 +122,7 @@ $(document).ready(function() {
             target: "rgb1",
             action: "set",
             format: "hsv",
-            value: [
+            val: [
                 rgb1.h,
                 rgb1.s,
                 rgb1.v

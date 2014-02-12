@@ -71,6 +71,7 @@ $(document).ready(function() {
             .attr("y", h - Math.round(curperc * h))
             .attr("fill", function() {
                 r = 255 * curperc;
+                console.log(curperc);
                 b = 255 - r;
                 hex = "#" + Math.round(r).toString(16) + "88" + Math.round(b).toString(16);
                 return hex;
@@ -95,9 +96,9 @@ $(document).ready(function() {
     targethandle.on('dragMove', function(instance, e, pointer) {
         targettemp = bounds.bot + (1 - (instance.position.y / (sliderheight - 30))) * (bounds.top - bounds.bot);
         ws.send(JSON.stringify({
-            target: "thermostat",
+            target: "therm",
             action: "set",
-            value: targettemp
+            val: targettemp
         }));
         settarget();
     });

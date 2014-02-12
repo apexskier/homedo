@@ -13,9 +13,11 @@
     <div class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header">
+                <p class="navbar-brand" href="#">Homedo&nbsp;&nbsp;
+                    <small><a href="/">{{ ctx['therm']['name']}}</a>&nbsp;&nbsp;
+                    <a href="/rgb">{{ ctx['rgb1']['name']}}</a></small>
+                </p>
             </div>
-        </div>
-        <div class="collapse navbar-collapse" id="top">
         </div>
     </div>
     <div class="container-fluid content">
@@ -55,7 +57,14 @@
     <script src="/static/libs/jquery-2.1.0.min.js"></script>
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
     <script src="/static/libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/static/libs/jquery.stayInWebApp.min.js"></script>
     <script>
+        $(document).ready(function() {
+            $(function() {
+                $.stayInWebApp('.navbar-header a');
+            });
+        });
+
         var rgb1 = {
             h: {{ ctx['rgb1']['hsv'][0] }},
             s: {{ ctx['rgb1']['hsv'][1] }},
