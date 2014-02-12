@@ -54,22 +54,15 @@
         </div>
     </div>
     <script src="/static/libs/color-conversion-algorithms.js"></script>
-    <script src="/static/libs/jquery-2.1.0.min.js"></script>
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
-    <script src="/static/libs/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/libs/jquery.stayInWebApp.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        $(document).ready(function() {
-            $(function() {
-                $.stayInWebApp('.navbar-header a');
-            });
-        });
-
         var rgb1 = {
             h: {{ ctx['rgb1']['hsv'][0] }},
             s: {{ ctx['rgb1']['hsv'][1] }},
             v: {{ ctx['rgb1']['hsv'][2] }},
         }
+        console.log(rgb1.h);
     </script>
     <script src="/static/js/rgb.js"></script>
 </body>

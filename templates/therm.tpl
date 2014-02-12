@@ -31,8 +31,6 @@
                     </div>
                 </div>
             </div>
-            <div class="vib">
-            </div>
         </div>
     </div>
     <div class="navbar navbar-default navbar-fixed-bottom">
@@ -50,18 +48,9 @@
     </div>
 
     <script src="/static/libs/color-conversion-algorithms.js"></script>
-    <script src="/static/libs/jquery-2.1.0.min.js"></script>
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
-    <script src="/static/libs/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/libs/jquery.stayInWebApp.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        $(document).ready(function() {
-            $(function() {
-                $.stayInWebApp('.navbar-header a');
-            });
-        });
-
         var currenttemp = {{ ctx['therm']['val'] if ctx['therm']['val'] else "0" }};
         var targettemp = {{ ctx['therm']['target'] }};
         var bounds = {

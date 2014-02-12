@@ -90,7 +90,7 @@ def control(ws):
                 if action == 'set':
                     if driver_type == RGBDriver:
                         f = str(data[u'format'])
-                        c = driver.get()
+                        c = [0, 0, 0]
                         if f == 'hls':
                             c = colorsys.hls_to_rgb(
                                     data[u'val'][0],
@@ -133,6 +133,8 @@ def control(ws):
                                 )
                         elif f == 'rgb':
                             ret['val'] = c
+                        ret['format'] = f
+                        ret['action'] = 'get'
                     else:
                         ret['val'] = driver.get()
                     ws.send(json.dumps(ret))
