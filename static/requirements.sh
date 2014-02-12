@@ -6,6 +6,7 @@ cd libs
 # bootstrap
 wget https://github.com/twbs/bootstrap/releases/download/v3.1.0/bootstrap-3.1.0-dist.zip
 unzip bootstrap-3.1.0-dist.zip
+mv dist bootstrap
 rm bootstrap-3.1.0-dist.zip
 
 # color-conversion-algorithms.js

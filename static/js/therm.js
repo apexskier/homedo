@@ -40,7 +40,7 @@ $(document).ready(function() {
         .attr("class", "current-temp-text")
         .attr("height", 20)
         .attr("y", h)
-        .attr("x", w / 2 + 40);
+        .attr("x", w / 2 + 38);
     var currentTempHandle = currentTempContainer.append("rect")
         .attr("width", 30)
         .attr("height", 30)
@@ -56,7 +56,7 @@ $(document).ready(function() {
         .duration(400)
             .attr("y", function() {
                 var bary = h - (curperc * h);
-                return bary + 24;
+                return bary + 23;
             })
             .tween("text", function(d) {
                 var i = d3.interpolate(this.height, d);
