@@ -52,7 +52,7 @@ $(document).ready(function() {
             "hsl(360, " + s + "%, " + l + "%) 100%)");
     }
     setHue();
-    $hue.find(".handle").css("top", (sliderheight - 30) * rgb1.h);
+    $hue.find(".handle").css("top", (sliderheight - 30) * rgb1.h).fadeIn(200);
     huehandle = new Draggabilly($hue.find(".handle").get(0), {
         axis: 'y',
         containment: '.hue .inner'
@@ -75,7 +75,7 @@ $(document).ready(function() {
             "hsl(" + (lows[0]  * 360) + ", 0%, "   + (lows[2]  * 100) + "%) 100%)");
     }
     setSat();
-    $sat.find(".handle").css("top", (sliderheight - 30) * (1 - rgb1.s));
+    $sat.find(".handle").css("top", (sliderheight - 30) * (1 - rgb1.s)).fadeIn(200);
     sathandle = new Draggabilly($sat.find(".handle").get(0), {
         axis: 'y',
         containment: '.sat .inner'
@@ -97,7 +97,7 @@ $(document).ready(function() {
             "hsl(" + (lows[0]  * 360) + ", " + (lows[1]  * 100) + "%, " + (lows[2]  * 100) + "%) 100%)");
     }
     setVib();
-    $vib.find(".handle").css("top", (sliderheight - 30) * (1 - rgb1.v));
+    $vib.find(".handle").css("top", (sliderheight - 30) * (1 - rgb1.v)).fadeIn(200);
     vibhandle = new Draggabilly($vib.find(".handle").get(0), {
         axis: 'y',
         containment: '.vib .inner'

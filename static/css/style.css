@@ -26,6 +26,7 @@ html, body,
     padding-right: 15px;
 }
 .handle {
+    display: none;
     margin-left: -10px;
     margin-right: -10px;
     text-align: center;
@@ -53,9 +54,6 @@ html, body,
     border-radius: 10px;
     width: 20px;
     margin: 0 auto;
-}
-.target .handle {
-    display: none;
 }
 .target .inner {
     background-image: -webkit-linear-gradient(top, #ff8800 0%, #0088ff 100%);
