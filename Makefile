@@ -1,3 +1,9 @@
+all:
+	make update-libs
+	make static
+
+static: static/libs
+	(cd static && ./requirements.sh)
 
 update-libs: libs/ledDriver libs/thermostat
 	(cd libs/ledDriver && git pull)
