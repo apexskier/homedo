@@ -2,3 +2,4 @@ bottle==0.11.6
 bottle-websocket==0.2.5
 gevent==1.0
 gevent-websocket==0.9.1
+bottle-cork==0.10
