@@ -16,6 +16,7 @@ Internet connected thermostat and lights.
 - Unblacklist i2c - http://www.raspberrypi.org/phpBB3/viewtopic.php?f=33&t=31717
 - Enable i2c - http://www.instructables.com/id/Raspberry-Pi-I2C-Python/step3/Enable-kernel-I2C-Module/
 - `sudo adduser $USER i2c`
+- `python setup_admin.py` and follow directions
 - `python server.py`
 
 ### Todo
