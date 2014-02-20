@@ -1,0 +1,8 @@
+session_opts = {
+    'session.cookie_expires': True,
+    'session.encrypt_key': 'secretkey',
+    'session.httponly': True,
+    'session.timeout': 3600 * 24 * 30,  # 30 days
+    'session.type': 'cookie',
+    'session.validate_key': True,
+}
