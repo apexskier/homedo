@@ -2,3 +2,4 @@ libs/*/*
 libs/ledDriver
 libs/thermostat
 static/libs/*
+private.py

@@ -1,8 +1,11 @@
 import json, signal, sys, os
-from bottle import redirect, request, route, run, template, get, post, static_file, debug, response
-from bottle.ext.websocket import GeventWebSocketServer
-from bottle.ext.websocket import websocket
-import colorsys
+import bottle
+from bottle import request, response, route, template, get, post, static_file, debug, view
+from bottle.ext.websocket import GeventWebSocketServer, websocket
+from beaker.middleware import SessionMiddleware
+from cork import Cork
+import datetime, colorsys
+import private
 
 from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
 from libs.thermostat.temp_humid_sensor import Thermostat
@@ -32,6 +35,12 @@ thermostat = targets['therm']['driver']
 thermostat_thread = thermostat.run()
 thermostat_thread.start()
 
+app = bottle.app()
+app = SessionMiddleware(app, private.session_opts)
+
+aaa = Cork('conf')
+authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
+
 def sig_handler(signal, frame):
     print
     for target in targets:
@@ -41,7 +50,18 @@ def sig_handler(signal, frame):
     sys.exit(0)
 signal.signal(signal.SIGINT, sig_handler)
 
+def post_get(name, default=''):
+    return request.POST.get(name, default).strip()
+
+def postd():
+    return request.forms
+
+"""""""""
+App Pages
+"""""""""
+
 @get('/')
+@authorize()
 def index():
     context = targets
     for key, item in context.items():
@@ -56,9 +76,10 @@ def index():
                     item['val'][1] / 255,
                     item['val'][2] / 255
                 )
-    return template('templates/therm', ctx=context)
+    return template('views/therm', ctx=context)
 
 @get('/rgb')
+@authorize()
 def rgb():
     context = targets
     for key, item in context.items():
@@ -73,9 +94,10 @@ def rgb():
                     item['val'][1] / 255,
                     item['val'][2] / 255
                 )
-    return template('templates/rgb', ctx=context)
+    return template('views/rgb', ctx=context)
 
 @get('/control', apply=[websocket])
+@authorize()
 def control(ws):
     while True:
         message = ws.receive()
@@ -148,6 +170,58 @@ def control(ws):
 def send_static(filename):
     return static_file(filename, root='static')
 
+@route('/login')
+@view('login')
+def login_form():
+    """Serve login form"""
+    return {}
+
+@post('/login')
+def login():
+    """Authenticate users"""
+    username = post_get('username')
+    password = post_get('password')
+    aaa.login(username, password, success_redirect='/', fail_redirect='/login')
+
+@route('/logout')
+def logout():
+    aaa.logout(success_redirect='/login')
+
+
+"""""
+Admin
+"""""
+@route('/admin')
+@authorize(role="admin", fail_redirect='/login')
+@view('admin_page')
+def admin():
+    """Only admin users can see this"""
+    aaa.require(role='admin', fail_redirect='/login')
+    return dict(
+            current_user = aaa.current_user,
+            users = aaa.list_users(),
+            roles = aaa.list_roles()
+        )
+
+@authorize(role="admin", fail_redirect='/login')
+@post('/create_user')
+def create_user():
+    try:
+        aaa.create_user(postd().username, postd().role, postd().password)
+        return dict(ok=True, msg='')
+    except Exception as e:
+        return dict(ok=False, msg=e.message)
+
+@post('/delete_user')
+@authorize(role="admin", fail_redirect='/login')
+def delete_user():
+    try:
+        aaa.delete_user(post_get('username'))
+        return dict(ok=True, msg='')
+    except Exception as e:
+        print (repr(e))
+        return dict(ok=False, msg=e.message)
+
 
 """
 API
@@ -155,6 +229,7 @@ API
 
 @get('/api/<target>')
 @get('/api/<target>/')
+@authorize()
 def get_current(target):
     ret = {}
     if target in targets:
@@ -171,6 +246,7 @@ def get_current(target):
 
 @get('/api/<target>/target')
 @get('/api/<target>/target/')
+@authorize()
 def get_target(target):
     ret = {}
     if target in targets:
@@ -188,6 +264,7 @@ def get_target(target):
 
 @post('/api/<target>')
 @post('/api/<target>/')
+@authorize()
 def set_target(target):
     ret = {}
     if target in targets:
@@ -204,4 +281,4 @@ def set_target(target):
     return json.dumps(ret)
 
 debug(True)
-run(host='0.0.0.0', port=8080, server=GeventWebSocketServer)
+bottle.run(host='0.0.0.0', app=app, port=8080, server=GeventWebSocketServer)

@@ -15,7 +15,8 @@
             <div class="navbar-header">
                 <p class="navbar-brand" href="#">Homedo&nbsp;&nbsp;
                     <small><a href="/">{{ ctx['therm']['name']}}</a>&nbsp;&nbsp;
-                    <a href="/rgb">{{ ctx['rgb1']['name']}}</a></small>
+                    <a href="/rgb">{{ ctx['rgb1']['name']}}</a>&nbsp;&nbsp;
+                    <a href="/logout">Logout</a></small>
                 </p>
             </div>
         </div>
