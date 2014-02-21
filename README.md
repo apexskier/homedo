@@ -4,6 +4,8 @@
 
 Internet connected thermostat and lights.
 
+![Picture of my setup. Sketttcchhh.](https://www.dropbox.com/s/fliiez10dazob0l/2014-02-14%2019.06.17.jpg)
+
 ## Setup
 
 - `sudo apt-get install python-dev libi2c-dev`
@@ -24,6 +26,6 @@ Internet connected thermostat and lights.
 - Make it work reliably without sudo/session setup.
 - Add scheduling.
 - Make it work on one page.
-- Automatically generate pages for each target in system.
+- Automatically generate pages for each target in syste.m
 - Add logging.
 - Add fancy graphs (of logs).
