@@ -4,3 +4,4 @@ libs/thermostat
 static/libs/*
 private.py
 conf/*
+*-data.json

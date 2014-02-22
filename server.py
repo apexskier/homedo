@@ -1,4 +1,4 @@
-import json, signal, sys, os
+import json
 import bottle
 from bottle import request, response, route, template, get, post, static_file, debug, view
 from bottle.ext.websocket import GeventWebSocketServer, websocket
@@ -6,49 +6,17 @@ from beaker.middleware import SessionMiddleware
 from cork import Cork
 import datetime, colorsys
 import private
+from settings import *
+import logging
 
-from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
-from libs.thermostat.temp_humid_sensor import Thermostat
-
-targets = {
-        'rgb1': {
-            'name': "RGB Lights",
-            'key': 'rgb1',
-            'driver': RGBDriver(0, 1, 2),
-            'type': "rgbdriver"
-        },
-        'led1': {
-            'name': "LED Light strip",
-            'key': 'led1',
-            'driver': SingleLEDDriver(3),
-            'type': "leddriver"
-        },
-        'therm': {
-            'name': "Heat",
-            'key': 'therm',
-            'driver': Thermostat(18, 4, 55),
-            'type': "thermostat"
-        }
-    }
-
-thermostat = targets['therm']['driver']
-thermostat_thread = thermostat.run()
-thermostat_thread.start()
+logging.basicConfig(filename='server.log', level=logging.DEBUG)
+logger = logging.getLogger('server')
 
 app = bottle.app()
 app = SessionMiddleware(app, private.session_opts)
 
 aaa = Cork('conf')
 authorize = aaa.make_auth_decorator(fail_redirect="/login", role="user")
-
-def sig_handler(signal, frame):
-    print
-    for target in targets:
-        targets[target]['driver'].off()
-    print("Waiting for Thermostat to finish.")
-    thermostat_thread.join()
-    sys.exit(0)
-signal.signal(signal.SIGINT, sig_handler)
 
 def post_get(name, default=''):
     return request.POST.get(name, default).strip()
@@ -102,7 +70,7 @@ def control(ws):
     while True:
         message = ws.receive()
         if message:
-            print "Recieved message: " + message
+            logger.info("Recieved message: " + message)
             data = json.loads(message)
             driver = None
             if u'target' in data:
@@ -160,7 +128,7 @@ def control(ws):
                     else:
                         ret['val'] = driver.get()
                     ws.send(json.dumps(ret))
-                    print("Sent message: " + json.dumps(ret))
+                    logger.info("Sent message: " + json.dumps(ret))
                 elif action == 'off':
                     driver.off()
         else:
@@ -219,7 +187,7 @@ def delete_user():
         aaa.delete_user(post_get('username'))
         return dict(ok=True, msg='')
     except Exception as e:
-        print (repr(e))
+        logger.warning(repr(e))
         return dict(ok=False, msg=e.message)
 
 
@@ -280,5 +248,6 @@ def set_target(target):
 
     return json.dumps(ret)
 
-debug(True)
-bottle.run(host='0.0.0.0', app=app, port=8080, server=GeventWebSocketServer)
+def runServer(d=False):
+    debug(d)
+    bottle.run(host='0.0.0.0', app=app, port=8080, server=GeventWebSocketServer)
