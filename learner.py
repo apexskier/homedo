@@ -1,13 +1,12 @@
 import threading
 from datetime import datetime, timedelta
-from settings import *
 import json
 
 class Learner(object):
     def __init__(self, target, learning=False, debug=False):
         self.target = target
         self.learning = learning
-        self.stop = False
+        self.running = True
         try:
             learnfile = open(target['key'] + '-data.json', 'r')
             filedata = learnfile.read()
@@ -16,11 +15,14 @@ class Learner(object):
         except IOError:
             self.data = {}
 
-        self.tick()
+        self.timer = threading.Timer(1, self.tick)
+        self.timer.start()
 
     def tick(self):
-        if not self.stop:
-            threading.Timer(60 * 5, self.tick).start()
+        if not self.running:
+            self.timer.cancel()
+            self.timer = threading.Timer(60 * 5, self.tick)
+            self.timer.start()
 
         now = datetime.now()
         fivemin = now - timedelta(minutes = now.minute % 5,
@@ -32,20 +34,22 @@ class Learner(object):
                 fivemin.minute) / 5
         target = float(self.target['driver'].get_target())
 
+        self.data[str(indx)] = {
+                'target': target,
+                'time': fivemin.strftime("%a %H:%M")
+            }
         if self.learning or indx not in self.data:
-            self.data[str(indx)] = {
-                    'target': target,
-                    'time': fivemin.strftime("%a %H:%M")
-                }
-            self.saveData()
-        elif float(self.data[str(indx)]['target']) != target:
-            self.data[str(indx)] = {
-                    'target': target * .3 + float(self.data[str(indx)]['target']) * .7,
-                    'time': fivemin.strftime("%a %H:%M")
-                }
-            self.saveData()
+            self.data[str(indx)]['confidence'] = 1
+        elif float(self.data[str(indx)]['target']) == target:
+            if 'confidence' in self.data[str(indx)]:
+                self.data[str(indx)]['confidence'] = float(self.data[str(indx)]['confidence']) + 1
+            else:
+                self.data[str(indx)]['confidence'] = 1
         else:
-            target['driver'].set(float(self.data[str(indx)]['target']))
+            self.data[str(indx)]['confidence'] -= abs(target - float(self.data[str(indx)]['target'])) / 2
+            c = float(self.data[str(indx)]['confidence']) / (1 + float(self.data[str(indx)]['confidence']))
+            self.data[str(indx)]['target'] = c * float(self.data[str(indx)]['target']) + (1 - c) * target
+        self.saveData()
         print fivemin
 
     def saveData(self):
@@ -58,14 +62,22 @@ class Learner(object):
             print("ERROR with writing to file")
 
     def stop(self):
-        self.stop = True
+        self.timer.cancel()
+        self.running = False
 
 if __name__ == '__main__':
     from libs.thermostat.temp_humid_sensor import Thermostat
+    import signal
+
+    def sig_handler(signal, frame):
+        print("Stopping")
+        l.stop()
+        thermostat.off()
+    signal.signal(signal.SIGINT, sig_handler)
 
     thing = {'driver': Thermostat(18, 4, 55), 'key': 'test'}
     thermostat = thing['driver']
-    thermostat_thread = thermostat.run()
-    thermostat_thread.start()
 
+    print "making learner"
     l = Learner(thing, True)
+    print "made learner"

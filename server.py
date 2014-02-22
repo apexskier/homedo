@@ -24,6 +24,7 @@ def post_get(name, default=''):
 def postd():
     return request.forms
 
+
 """""""""
 App Pages
 """""""""
@@ -73,64 +74,83 @@ def control(ws):
             logger.info("Recieved message: " + message)
             data = json.loads(message)
             driver = None
+            ret = {}
             if u'target' in data:
                 driver = targets[str(data[u'target'])]['driver']
                 driver_type = type(driver)
                 action = data[u'action']
                 if action == 'set':
-                    if driver_type == RGBDriver:
-                        f = str(data[u'format'])
-                        c = [0, 0, 0]
-                        if f == 'hls':
-                            c = colorsys.hls_to_rgb(
-                                    data[u'val'][0],
-                                    data[u'val'][1],
-                                    data[u'val'][2]
-                                )
-                        elif f == 'hsl':
-                            c = colorsys.hls_to_rgb(
-                                    data[u'val'][0],
-                                    data[u'val'][2],
-                                    data[u'val'][1]
-                                )
-                        elif f == 'hsv':
-                            c = colorsys.hsv_to_rgb(
-                                    data[u'val'][0],
-                                    data[u'val'][1],
-                                    data[u'val'][2]
-                                )
-                        elif f == 'rgb':
-                            c = data[u'val']
-                        driver.set_rgb(c)
-                    else:
-                        driver.set(data[u'val'])
+                    ret['action'] = 'set'
+                    try:
+                        if driver_type == RGBDriver:
+                            f = str(data[u'format'])
+                            c = [0, 0, 0]
+                            if f == 'hls':
+                                c = colorsys.hls_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][1],
+                                        data[u'val'][2]
+                                    )
+                            elif f == 'hsl':
+                                c = colorsys.hls_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][2],
+                                        data[u'val'][1]
+                                    )
+                            elif f == 'hsv':
+                                c = colorsys.hsv_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][1],
+                                        data[u'val'][2]
+                                    )
+                            elif f == 'rgb':
+                                c = data[u'val']
+                            driver.set_rgb(c)
+                        else:
+                            driver.set(data[u'val'])
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
                 elif action == 'get':
-                    ret = {}
                     ret['action'] = 'get'
-                    if driver_type == RGBDriver:
-                        f = str(data[u'format'])
-                        c = driver.get()
-                        if f == 'hsl':
-                            ret['val'] = colorsys.rgb_to_hsl(
-                                    c[0],
-                                    c[1],
-                                    c[2]
-                                )
-                        elif f == 'hsv':
-                            ret['val'] = colorsys.rgb_to_hsv(
-                                    c[0],
-                                    c[1],
-                                    c[2]
-                                )
-                        elif f == 'rgb':
-                            ret['val'] = c
-                        ret['format'] = f
-                    else:
-                        ret['val'] = driver.get()
-                    ws.send(json.dumps(ret))
-                    logger.info("Sent message: " + json.dumps(ret))
+                    try:
+                        if driver_type == RGBDriver:
+                            f = str(data[u'format'])
+                            c = driver.get()
+                            if f == 'hsl':
+                                ret['val'] = colorsys.rgb_to_hsl(
+                                        c[0],
+                                        c[1],
+                                        c[2]
+                                    )
+                            elif f == 'hsv':
+                                ret['val'] = colorsys.rgb_to_hsv(
+                                        c[0],
+                                        c[1],
+                                        c[2]
+                                    )
+                            elif f == 'rgb':
+                                ret['val'] = c
+                            ret['format'] = f
+                        else:
+                            ret['val'] = driver.get()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                elif action == 'get_status':
+                    try:
+                        ret['val'] = driver.get_status()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
                 elif action == 'off':
-                    driver.off()
+                    try:
+                        driver.off()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                ws.send(json.dumps(ret))
+                logger.info("Sent message: " + json.dumps(ret))
         else:
             break
 
@@ -159,6 +179,7 @@ def logout():
 """""
 Admin
 """""
+
 @route('/admin')
 @authorize(role="admin", fail_redirect='/login')
 @view('admin_page')
