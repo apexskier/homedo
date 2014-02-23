@@ -1,5 +1,5 @@
 from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
-from libs.thermostat.temp_humid_sensor import Thermostat
+from thermostat import Thermostat
 import logging
 
 applogger = logging.getLogger('Global')
