@@ -68,7 +68,6 @@ def rgb():
 @route('/control')
 def control():
     ws = request.environ.get('wsgi.websocket')
-    raise Exception(ws)
     if not ws:
         abort(400, 'Expected WebSocket request.')
     while True:
