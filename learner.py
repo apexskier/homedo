@@ -197,4 +197,4 @@ class Events(object):
         minute = seconds / 60
         second = seconds % 60
         # 2001 starts on a monday
-        return datetime(year=2001, month=1, day=1 + weekday, second=second, minute=minute, hour=hour).strftime('%a %H:%M')
+        return datetime(year=2001, month=1, day=1 + weekday, second=int(second), minute=int(minute), hour=int(hour)).strftime('%a %H:%M')
