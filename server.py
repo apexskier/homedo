@@ -1,7 +1,9 @@
 import json
 import bottle
-from bottle import request, response, route, template, get, post, static_file, debug, view
-from bottle.ext.websocket import GeventWebSocketServer
+from bottle import request, response, route, template, get, post, static_file, view, abort
+from bottle.ext.websocket import GeventWebSocketServer, websocket
+from geventwebsocket import WebSocketApplication, Resource, WebSocketError
+
 from beaker.middleware import SessionMiddleware
 from cork import Cork
 import datetime, colorsys
@@ -65,101 +67,109 @@ def rgb():
                 )
     return template('views/rgb', ctx=context)
 
-@route('/control')
-def control():
-    ws = request.environ.get('wsgi.websocket')
-    if not ws:
-        abort(400, 'Expected WebSocket request.')
-    while True:
-        try:
-            message = ws.receive()
-            if message:
-                logger.info("Recieved message: " + message)
-                data = json.loads(message)
-                driver = None
-                ret = {}
-                if u'target' in data:
-                    driver = targets[str(data[u'target'])]['driver']
-                    driver_type = type(driver)
-                    action = data[u'action']
-                    if action == 'set':
-                        ret['action'] = 'set'
-                        try:
-                            if driver_type == RGBDriver:
-                                f = str(data[u'format'])
-                                c = [0, 0, 0]
-                                if f == 'hls':
-                                    c = colorsys.hls_to_rgb(
-                                            data[u'val'][0],
-                                            data[u'val'][1],
-                                            data[u'val'][2]
-                                        )
-                                elif f == 'hsl':
-                                    c = colorsys.hls_to_rgb(
-                                            data[u'val'][0],
-                                            data[u'val'][2],
-                                            data[u'val'][1]
-                                        )
-                                elif f == 'hsv':
-                                    c = colorsys.hsv_to_rgb(
-                                            data[u'val'][0],
-                                            data[u'val'][1],
-                                            data[u'val'][2]
-                                        )
-                                elif f == 'rgb':
-                                    c = data[u'val']
-                                driver.set_rgb(c)
-                            else:
-                                driver.set(data[u'val'])
-                            ret['status'] = 'success'
-                        except:
-                            ret['status'] = 'fail'
-                    elif action == 'get':
-                        ret['action'] = 'get'
-                        try:
-                            if driver_type == RGBDriver:
-                                f = str(data[u'format'])
-                                c = driver.get()
-                                if f == 'hsl':
-                                    ret['val'] = colorsys.rgb_to_hsl(
-                                            c[0],
-                                            c[1],
-                                            c[2]
-                                        )
-                                elif f == 'hsv':
-                                    ret['val'] = colorsys.rgb_to_hsv(
-                                            c[0],
-                                            c[1],
-                                            c[2]
-                                        )
-                                elif f == 'rgb':
-                                    ret['val'] = c
-                                ret['format'] = f
-                            else:
-                                ret['val'] = driver.get()
-                            ret['status'] = 'success'
-                        except:
-                            ret['status'] = 'fail'
-                    elif action == 'get_status':
-                        try:
-                            ret['val'] = driver.get_status()
-                            ret['status'] = 'success'
-                        except:
-                            ret['status'] = 'fail'
-                    elif action == 'off':
-                        try:
-                            driver.off()
-                            ret['status'] = 'success'
-                        except:
-                            ret['status'] = 'fail'
-                    ws.send(json.dumps(ret))
-                    logger.info("Sent message: " + json.dumps(ret))
-            else:
-                break
-        except Exception as e:
-            print("WebSocketError")
-            print e
-            break
+class WebSocketControl(WebSocketApplication):
+    def on_open(self):
+        if self.ws:
+            try:
+                ret = json.dumps({"testing": "test"})
+                self.ws.send(ret)
+            except WebSocketError:
+                logger.warning("WebSocketError on hello.")
+        else:
+            abort(404, "Not a websocket request.")
+
+    def on_message(self, message):
+        if message:
+            data = json.loads(message)
+            driver = None
+            ret = {}
+            if u'target' in data:
+                driver = targets[str(data[u'target'])]['driver']
+                driver_type = type(driver)
+                action = data[u'action']
+                if action == 'set':
+                    ret['action'] = 'set'
+                    try:
+                        if driver_type == RGBDriver:
+                            f = str(data[u'format'])
+                            c = [0, 0, 0]
+                            if f == 'hls':
+                                c = colorsys.hls_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][1],
+                                        data[u'val'][2]
+                                    )
+                            elif f == 'hsl':
+                                c = colorsys.hls_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][2],
+                                        data[u'val'][1]
+                                    )
+                            elif f == 'hsv':
+                                c = colorsys.hsv_to_rgb(
+                                        data[u'val'][0],
+                                        data[u'val'][1],
+                                        data[u'val'][2]
+                                    )
+                            elif f == 'rgb':
+                                c = data[u'val']
+                            driver.set_rgb(c)
+                        else:
+                            driver.set(data[u'val'])
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                elif action == 'get':
+                    ret['action'] = 'get'
+                    try:
+                        if driver_type == RGBDriver:
+                            f = str(data[u'format'])
+                            c = driver.get()
+                            if f == 'hsl':
+                                ret['val'] = colorsys.rgb_to_hsl(
+                                        c[0],
+                                        c[1],
+                                        c[2]
+                                    )
+                            elif f == 'hsv':
+                                ret['val'] = colorsys.rgb_to_hsv(
+                                        c[0],
+                                        c[1],
+                                        c[2]
+                                    )
+                            elif f == 'rgb':
+                                ret['val'] = c
+                            ret['format'] = f
+                        else:
+                            ret['val'] = driver.get()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                elif action == 'get_status':
+                    try:
+                        ret['val'] = driver.get_status()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                elif action == 'off':
+                    try:
+                        driver.off()
+                        ret['status'] = 'success'
+                    except:
+                        ret['status'] = 'fail'
+                ret = json.dumps(ret)
+                self.ws.send(ret)
+        else:
+            self.ws.close(message="Connection killed by client.")
+
+    def on_close(self, reason):
+        pass
+
+@route('/control', apply=[websocket])
+def control(ws):
+    wsc = WebSocketControl(ws)
+    wsc.handle()
+    wsc.ws.close(message="Ending control route.")
 
 @route('/static/<filename:path>')
 def send_static(filename):
@@ -276,6 +286,19 @@ def set_target(target):
 
     return json.dumps(ret)
 
+
 def runServer(d=False):
-    debug(d)
-    bottle.run(host='0.0.0.0', app=app, port=8080, server=GeventWebSocketServer)
+    bottle.debug(d)
+    bottle.run(host='0.0.0.0', port=8080, app=app, server=GeventWebSocketServer, reloader=True)
+
+if __name__ == "__main__":
+    import signal, sys
+
+    def Shutdown(signal, frame):
+        for target in targets:
+            targets[target]['driver'].off()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, Shutdown)
+
+    runServer(True)

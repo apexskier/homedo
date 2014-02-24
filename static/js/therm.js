@@ -13,7 +13,7 @@ ws.onopen = function(evt) {
     console.log('Websocket connection opened.');
     page = setUp();
     page.showCurrentTemp();
-    setInterval(function() {
+    window.tick = setInterval(function() {
         ws.send(JSON.stringify({
             action: 'get',
             target: 'therm'
@@ -32,6 +32,7 @@ ws.onmessage = function(evt) {
 }
 ws.onclose = function(evt) {
     console.log('WebSocket connection closed.');
+    clearInterval(window.tick);
 }
 
 function setUp() {
