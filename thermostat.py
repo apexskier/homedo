@@ -1,6 +1,7 @@
 import threading, datetime
 import wiringpi2 as wiringpi
 from libs.AM2302.temp_humid_sensor import Sensor
+import learner
 
 class Thermostat(object):
     def __init__(self, therm_pin, sensor_pin, target_temp=55):
@@ -13,6 +14,7 @@ class Thermostat(object):
         self.OUT = 1
         self.IN = 0
         self.PWM = 0
+        self.learner = learner.Events(self, 'therm', 55, 5)
 
         wiringpi.digitalWrite(self.THERM, 0)
 
@@ -36,13 +38,16 @@ class Thermostat(object):
                 wiringpi.digitalWrite(self.THERM, 0)
 
     def set(self, target_temp):
-        self.target_temp = float(target_temp)
-        if self.current_temp and self.current_temp < self.target_temp and not self.heat_on:
-            self.heat_on = True
-            wiringpi.digitalWrite(self.THERM, 1)
-        elif self.current_temp > self.target_temp and self.heat_on:
-            self.heat_on = False
-            wiringpi.digitalWrite(self.THERM, 0)
+        @self.learner.watchEvent
+        def _set(self, target_temp):
+            self.target_temp = float(target_temp)
+            if self.current_temp and self.current_temp < self.target_temp and not self.heat_on:
+                self.heat_on = True
+                wiringpi.digitalWrite(self.THERM, 1)
+            elif self.current_temp > self.target_temp and self.heat_on:
+                self.heat_on = False
+                wiringpi.digitalWrite(self.THERM, 0)
+        _set(self, target_temp)
 
     def get(self):
         try:
@@ -64,3 +69,25 @@ class Thermostat(object):
         self.timer.cancel()
         self.sensor.off()
         wiringpi.digitalWrite(self.THERM, 0)
+
+
+if __name__ == '__main__':
+    import signal
+
+    def sig_handler(signal, frame):
+        print("Stopping")
+        thermostat.off()
+    signal.signal(signal.SIGINT, sig_handler)
+
+    print("Setting up thermostat.")
+    thermostat = Thermostat(18, 4, 55)
+
+    import time
+    print("Waiting for reading.")
+    for i in range(0, 15):
+        print(i)
+        time.sleep(1)
+    print("trying some sets")
+    thermostat.set(60)
+    thermostat.set(60)
+    print thermostat.get()

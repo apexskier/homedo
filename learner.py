@@ -2,8 +2,8 @@ import threading
 from datetime import datetime, timedelta
 import json
 
-class Learner(object):
-    def __init__(self, target, learning=False, debug=False):
+class Predicting(object):
+    def __init__(self, target, key, learning=False, debug=False):
         self.target = target
         self.learning = learning
         self.running = True
@@ -65,19 +65,127 @@ class Learner(object):
         self.timer.cancel()
         self.running = False
 
-if __name__ == '__main__':
-    from libs.thermostat.temp_humid_sensor import Thermostat
-    import signal
+class Events(object):
+    def __init__(self, target, key, baseline, threshold):
+        self.target = target
+        self.key = key
+        self.filename = key + '-data.json'
+        self.baseline = baseline
+        self.threshold = threshold
 
-    def sig_handler(signal, frame):
-        print("Stopping")
-        l.stop()
-        thermostat.off()
-    signal.signal(signal.SIGINT, sig_handler)
+        try:
+            learnfile = open(self.filename, 'r')
+            filedata = learnfile.read()
+            self.data = json.loads(filedata)
+            learnfile.close()
+        except IOError:
+            self.data = {
+                    'events': [],
+                    'possible_events': []
+                }
 
-    thing = {'driver': Thermostat(18, 4, 55), 'key': 'test'}
-    thermostat = thing['driver']
+    def saveData(self):
+        try:
+            print("Writing data")
+            filedata = json.dumps(self.data, sort_keys=True, indent=2, separators=(',', ': '))
+            learnfile = open(self.filename, 'w')
+            learnfile.write(filedata)
+            learnfile.close()
+        except:
+            print("ERROR with writing to file")
+        pass
 
-    print "making learner"
-    l = Learner(thing, True)
-    print "made learner"
+    def watchEvent(self, func):
+        def wrapper(funcself, val):
+            now = datetime.now()
+            nowsec = now.second + \
+                  now.minute * 60 + \
+                  now.hour * 60 * 60 + \
+                  now.weekday() * 24 * 60 * 60
+            existing_event = None
+            possible_event = None
+            before = True
+            for event in self.data['events']:
+                # check if before existing event (push earlier/change temp)
+                if 0 < event['seconds'] - nowsec < 5 * 60:
+                    existing_event = event
+                # check if after existing event (change temp/remove)
+                if 0 < nowsec - event['seconds'] < 5 * 60:
+                    existing_event = event
+                    before = False
+            if existing_event:
+                if before: # push earlier
+                    if existing_event['change']:
+                        if existing_event['change']['before']: # assume you want to push earlier and avg temp
+                            Events._changeSecs(existing_event, (existing_event['seconds'] + existing_event['change']['seconds'] + nowsec) / 3)
+                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
+                        elif existing_event['val'] - val > 0 and existing_event['change']['val'] - val > 0 or \
+                           val - existing_event['val'] > 0 and val - existing_event['change']['val'] > 0:
+                            # change temperature
+                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
+                        # else get rid of change because we've seen inconsitancies
+                        # TODO: add time check since change was added and add this as a new change
+                        existing_event['change'] = {}
+                    else: # add new change
+                        existing_event['change'] = {
+                                'before': before,
+                                'val': val,
+                                'seconds': nowsec
+                            }
+                else:
+                    if 'change' in existing_event and existing_event['change']:
+                        if abs(self.baseline - val) < self.threshold and abs(self.baseline - existing_event['change']['val']) < self.threshold:
+                            # assume you want to cancel event
+                            self.data['events'].remove(existing_event)
+                        elif abs(existing_event['val'] - val) < self.threshold:
+                            # assume you want to change val
+                            Events._changeSecs(existing_event, (existing_event['seconds'] + nowsec) / 2) # weight change less
+                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
+                        existing_event['change'] = {}
+                    else: # add new change
+                        existing_event['change'] = {
+                                'before': before,
+                                'val': val,
+                                'seconds': nowsec
+                            }
+            else: # new event
+                # check similar possible event
+                for event in self.data['possible_events']:
+                    if abs(event['seconds'] - nowsec) < 7.5 * 60:
+                        possible_event = event
+                # check if actually similar
+                if possible_event:
+                    if abs(val - possible_event['val']) < self.threshold:
+                        # add event
+                        self.data['events'].append({
+                                'seconds': nowsec + possible_event['seconds'] / 2,
+                                'val': val + possible_event['val'] / 2,
+                                'time': Events._secsToTimeStr(nowsec + possible_event['seconds'] / 2)
+                            })
+                    # inconsistancies
+                    self.data['possible_events'].remove(possible_event)
+                else:
+                    self.data['possible_events'].append({
+                            'seconds': nowsec,
+                            'val': val
+                        })
+            self.saveData()
+
+            return func(funcself, val)
+        return wrapper
+
+    @staticmethod
+    def _changeSecs(e, s):
+        e['seconds'] = s
+        e['time'] = Events._secsToTimeStr(s)
+
+    @staticmethod
+    def _secsToTimeStr(seconds):
+        weekday = seconds / (24 * 60 * 60)
+        seconds = seconds % (24 * 60 * 60)
+        hour = seconds / (60 * 60)
+        seconds = seconds % (60 * 60)
+        minute = seconds / 60
+        second = seconds % 60
+        # 2001 starts on a monday
+        return datetime(year=2001, month=1, day=1 + weekday, second=second, minute=minute, hour=hour).strftime('%a %H:%M')
