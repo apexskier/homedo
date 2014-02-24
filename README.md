@@ -6,6 +6,15 @@ Internet connected thermostat and lights.
 
 ![Picture of my setup. Sketttcchhh.](https://photos-5.dropbox.com/t/0/AAATmIlvcY2K2Xv1fFao9tQm0HkWQJJK1ttFRmVds2WUaw/12/5821804/jpeg/1024x768/3/1393012800/0/2/2014-02-14%2019.06.17.jpg/2uZPzay2LqMvYsvbfiaZ9AgHwN_kC9h1LzyYebcbu4E)
 
+## Learning
+
+Learns based on events. "Set 65 at this time, set 58 at this time..."
+
+This could use a lot of work.
+- Events should chain.
+- Changes to events should be applied immediately if they are close to existing events.
+- Changes should be applied after reccurrence if they are sort of close to existing events.
+
 ## Setup
 
 - `sudo apt-get install python-dev libi2c-dev`
@@ -23,9 +32,10 @@ Internet connected thermostat and lights.
 
 ### Todo
 
+- Learner should be a list of events, one following another.
+  This makes more sense, as changes happen from one to another (on to off to on).
 - Make it work reliably without sudo/session setup.
-- Add scheduling.
 - Make it work on one page.
-- Automatically generate pages for each target in syste.m
+- Automatically generate pages for each target in system.
 - Add logging.
-- Add fancy graphs (of logs).
+- Add fancy graphs.

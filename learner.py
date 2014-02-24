@@ -199,12 +199,34 @@ class Events(object):
             return func(funcself, val)
         return wrapper
 
-    def findEvent(self):
+    def findEventVal(self):
         now = datetime.now()
         nowsec = now.second + \
               now.minute * 60 + \
               now.hour * 60 * 60 + \
               now.weekday() * 24 * 60 * 60
+        for event in self.data['events']:
+            if abs(event['seconds'] - nowsec) < self.timethreshold / 2:
+                if 'change' in event and event['change'] and \
+                   (now - datetime.strptime(event['change']['updated'], '%c')) > timedelta(seconds = self.timethreshold):
+                    pass
+                else:
+                    return float(event['val'])
+        return None
+
+    def applyEvent(self, func):
+        def wrapper(funcself):
+            now = datetime.now()
+            nowsec = now.second + \
+                  now.minute * 60 + \
+                  now.hour * 60 * 60 + \
+                  now.weekday() * 24 * 60 * 60
+            val = self.findEventVal()
+            if val:
+                funcself.target_temp = val
+                print("Found val: {}".format(val))
+            return func(funcself)
+        return wrapper
 
     @staticmethod
     def _changeSecs(e, s):

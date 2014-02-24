@@ -23,22 +23,22 @@ class Thermostat(object):
         self.timer.start()
 
     def tick(self):
-        # @self.learner.applyEvent
-        # def _tick(self):
-        self.timer.cancel()
-        self.timer = threading.Timer(10, self.tick)
-        self.timer.start()
+        @self.learner.applyEvent
+        def _tick(self):
+            self.timer.cancel()
+            self.timer = threading.Timer(10, self.tick)
+            self.timer.start()
 
-        t = self.sensor.get()
-        if t:
-            self.current_temp = (9.0 / 5.0) * float(t) + 32
-            if self.current_temp < self.target_temp - 2 and not self.heat_on:
-                self.heat_on = True
-                wiringpi.digitalWrite(self.THERM, 1)
-            elif self.current_temp >= self.target_temp and self.heat_on:
-                self.heat_on = False
-                wiringpi.digitalWrite(self.THERM, 0)
-        # _tick(self)
+            t = self.sensor.get()
+            if t:
+                self.current_temp = (9.0 / 5.0) * float(t) + 32
+                if self.current_temp < self.target_temp - 2 and not self.heat_on:
+                    self.heat_on = True
+                    wiringpi.digitalWrite(self.THERM, 1)
+                elif self.current_temp >= self.target_temp and self.heat_on:
+                    self.heat_on = False
+                    wiringpi.digitalWrite(self.THERM, 0)
+        _tick(self)
 
     def set(self, target_temp):
         @self.learner.watchEvent
