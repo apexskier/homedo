@@ -72,7 +72,7 @@ class Thermostat(object):
 
 
 if __name__ == '__main__':
-    import signal
+    import signal, sys
 
     def sig_handler(signal, frame):
         print("Stopping")
@@ -91,3 +91,4 @@ if __name__ == '__main__':
     thermostat.set(60)
     thermostat.set(60)
     print thermostat.get()
+    thermostat.off()

@@ -102,73 +102,82 @@ class Events(object):
                   now.minute * 60 + \
                   now.hour * 60 * 60 + \
                   now.weekday() * 24 * 60 * 60
-            existing_event = None
-            possible_event = None
+            existing_event = False
+            possible_event = False
+            cleanup = []
             before = True
             for event in self.data['events']:
                 # check if before existing event (push earlier/change temp)
                 if 0 < event['seconds'] - nowsec < 5 * 60:
-                    existing_event = event
-                # check if after existing event (change temp/remove)
-                if 0 < nowsec - event['seconds'] < 5 * 60:
-                    existing_event = event
-                    before = False
-            if existing_event:
-                if before: # push earlier
-                    if existing_event['change']:
-                        if existing_event['change']['before']: # assume you want to push earlier and avg temp
-                            Events._changeSecs(existing_event, (existing_event['seconds'] + existing_event['change']['seconds'] + nowsec) / 3)
-                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
-                        elif existing_event['val'] - val > 0 and existing_event['change']['val'] - val > 0 or \
-                           val - existing_event['val'] > 0 and val - existing_event['change']['val'] > 0:
+                    if event['change']:
+                        if event['change']['before']: # assume you want to push earlier and avg temp
+                            Events._changeSecs(event, (event['seconds'] + event['change']['seconds'] + nowsec) / 3.0)
+                            event['val'] = (event['val'] + val + event['change']['val']) / 3.0
+                        elif event['val'] - val > 0 and event['change']['val'] - val > 0 or \
+                           val - event['val'] > 0 and val - event['change']['val'] > 0:
                             # change temperature
-                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
+                            event['val'] = (event['val'] + val + event['change']['val']) / 3.0
                         # else get rid of change because we've seen inconsitancies
                         # TODO: add time check since change was added and add this as a new change
-                        existing_event['change'] = {}
+                        event['change'] = {}
                     else: # add new change
-                        existing_event['change'] = {
+                        event['change'] = {
                                 'before': before,
                                 'val': val,
                                 'seconds': nowsec
                             }
-                else:
-                    if 'change' in existing_event and existing_event['change']:
-                        if abs(self.baseline - val) < self.threshold and abs(self.baseline - existing_event['change']['val']) < self.threshold:
+                    existing_event = True
+                    break
+                # check if after existing event (change temp/remove)
+                elif 0 < nowsec - event['seconds'] < 5 * 60:
+                    if 'change' in event and event['change']:
+                        if abs(self.baseline - val) < self.threshold and abs(self.baseline - event['change']['val']) < self.threshold:
                             # assume you want to cancel event
-                            self.data['events'].remove(existing_event)
-                        elif abs(existing_event['val'] - val) < self.threshold:
+                            cleanup.append(event)
+                        elif abs(event['change']['val'] - val) < self.threshold:
                             # assume you want to change val
-                            Events._changeSecs(existing_event, (existing_event['seconds'] + nowsec) / 2) # weight change less
-                            existing_event['val'] = (existing_event['val'] + val + existing_event['change']['val']) / 3
-                        existing_event['change'] = {}
+                            print("WANT TO CHANGE")
+                            Events._changeSecs(event, (event['seconds'] + nowsec) / 2.0) # weight change less
+                            event['val'] = (event['val'] + val + event['change']['val']) / 3.0
+                        event['change'] = {}
                     else: # add new change
-                        existing_event['change'] = {
+                        event['change'] = {
                                 'before': before,
                                 'val': val,
                                 'seconds': nowsec
                             }
-            else: # new event
+                    existing_event = True
+                    break
+            if not existing_event:
                 # check similar possible event
                 for event in self.data['possible_events']:
                     if abs(event['seconds'] - nowsec) < 7.5 * 60:
-                        possible_event = event
-                # check if actually similar
-                if possible_event:
-                    if abs(val - possible_event['val']) < self.threshold:
-                        # add event
-                        self.data['events'].append({
-                                'seconds': nowsec + possible_event['seconds'] / 2,
-                                'val': val + possible_event['val'] / 2,
-                                'time': Events._secsToTimeStr(nowsec + possible_event['seconds'] / 2)
-                            })
-                    # inconsistancies
-                    self.data['possible_events'].remove(possible_event)
-                else:
+                        if abs(val - event['val']) < self.threshold:
+                            # add event
+                            print("Adding: ", val, event['val'], nowsec, event['seconds'])
+                            self.data['events'].append({
+                                    'seconds': (nowsec + event['seconds']) / 2.0,
+                                    'val': (val + event['val']) / 2.0,
+                                    'time': Events._secsToTimeStr((nowsec + event['seconds']) / 2.0)
+                                })
+                        # inconsistancies
+                        cleanup.append(event)
+                        event = True
+                        break
+                if not possible_event:
                     self.data['possible_events'].append({
                             'seconds': nowsec,
                             'val': val
                         })
+
+            for event in cleanup:
+                try:
+                    self.data['possible_events'].remove(event)
+                except:
+                    try:
+                        self.data['events'].remove(event)
+                    except:
+                        pass
             self.saveData()
 
             return func(funcself, val)
