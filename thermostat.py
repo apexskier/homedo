@@ -14,7 +14,7 @@ class Thermostat(object):
         self.OUT = 1
         self.IN = 0
         self.PWM = 0
-        self.learner = learner.Events(self, 'therm', 55, 5)
+        self.learner = learner.Events(self, 'therm', 55, 5, 5 * 60)
 
         wiringpi.digitalWrite(self.THERM, 0)
 
@@ -23,6 +23,8 @@ class Thermostat(object):
         self.timer.start()
 
     def tick(self):
+        # @self.learner.applyEvent
+        # def _tick(self):
         self.timer.cancel()
         self.timer = threading.Timer(10, self.tick)
         self.timer.start()
@@ -36,6 +38,7 @@ class Thermostat(object):
             elif self.current_temp >= self.target_temp and self.heat_on:
                 self.heat_on = False
                 wiringpi.digitalWrite(self.THERM, 0)
+        # _tick(self)
 
     def set(self, target_temp):
         @self.learner.watchEvent

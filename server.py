@@ -116,8 +116,10 @@ class WebSocketControl(WebSocketApplication):
                         else:
                             driver.set(data[u'val'])
                         ret['status'] = 'success'
-                    except:
+                    except Exception as e:
                         ret['status'] = 'fail'
+                        ret['reason'] = str(e)
+                        logger.warning(e)
                 elif action == 'get':
                     ret['action'] = 'get'
                     try:
@@ -142,20 +144,26 @@ class WebSocketControl(WebSocketApplication):
                         else:
                             ret['val'] = driver.get()
                         ret['status'] = 'success'
-                    except:
+                    except Exception as e:
                         ret['status'] = 'fail'
+                        ret['reason'] = str(e)
+                        logger.warning(e)
                 elif action == 'get_status':
                     try:
                         ret['val'] = driver.get_status()
                         ret['status'] = 'success'
-                    except:
+                    except Exception as e:
                         ret['status'] = 'fail'
+                        ret['reason'] = str(e)
+                        logger.warning(e)
                 elif action == 'off':
                     try:
                         driver.off()
                         ret['status'] = 'success'
-                    except:
+                    except Exception as e:
                         ret['status'] = 'fail'
+                        ret['reason'] = str(e)
+                        logger.warning(e)
                 ret = json.dumps(ret)
                 self.ws.send(ret)
         else:
@@ -190,6 +198,14 @@ def login():
 @route('/logout')
 def logout():
     aaa.logout(success_redirect='/login')
+
+@route('/robots.txt')
+def robots():
+    return static_file('robots.txt', root='static')
+
+@route('/humans.txt')
+def robots():
+    return static_file('humans.txt', root='static')
 
 
 """""
