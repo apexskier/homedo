@@ -1,9 +1,8 @@
-import json
+import json, sys, signal
 import bottle
 from bottle import request, response, route, template, get, post, static_file, view, abort
 from bottle.ext.websocket import GeventWebSocketServer, websocket
 from geventwebsocket import WebSocketApplication, Resource, WebSocketError
-
 from beaker.middleware import SessionMiddleware
 from cork import Cork
 import datetime, colorsys
@@ -71,7 +70,7 @@ class WebSocketControl(WebSocketApplication):
     def on_open(self):
         if self.ws:
             try:
-                ret = json.dumps({"testing": "test"})
+                ret = json.dumps({"testing": "hello"})
                 self.ws.send(ret)
             except WebSocketError:
                 logger.warning("WebSocketError on hello.")
@@ -289,16 +288,14 @@ def set_target(target):
 
 def runServer(d=False):
     bottle.debug(d)
-    bottle.run(host='0.0.0.0', port=8080, app=app, server=GeventWebSocketServer, reloader=True)
+    bottle.run(host='0.0.0.0', port=8080, app=app, server=GeventWebSocketServer)
+
+def Shutdown(signal, frame):
+    for target in targets:
+        targets[target]['driver'].off()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, Shutdown)
 
 if __name__ == "__main__":
-    import signal, sys
-
-    def Shutdown(signal, frame):
-        for target in targets:
-            targets[target]['driver'].off()
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, Shutdown)
-
     runServer(True)

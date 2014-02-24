@@ -89,6 +89,5 @@ if __name__ == '__main__':
         time.sleep(1)
     print("trying some sets")
     thermostat.set(60)
-    thermostat.set(60)
     print thermostat.get()
     thermostat.off()

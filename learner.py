@@ -50,7 +50,6 @@ class Predicting(object):
             c = float(self.data[str(indx)]['confidence']) / (1 + float(self.data[str(indx)]['confidence']))
             self.data[str(indx)]['target'] = c * float(self.data[str(indx)]['target']) + (1 - c) * target
         self.saveData()
-        print fivemin
 
     def saveData(self):
         try:
@@ -86,7 +85,6 @@ class Events(object):
 
     def saveData(self):
         try:
-            print("Writing data")
             filedata = json.dumps(self.data, sort_keys=True, indent=2, separators=(',', ': '))
             learnfile = open(self.filename, 'w')
             learnfile.write(filedata)
@@ -136,7 +134,6 @@ class Events(object):
                             cleanup.append(event)
                         elif abs(event['change']['val'] - val) < self.threshold:
                             # assume you want to change val
-                            print("WANT TO CHANGE")
                             Events._changeSecs(event, (event['seconds'] + nowsec) / 2.0) # weight change less
                             event['val'] = (event['val'] + val + event['change']['val']) / 3.0
                         event['change'] = {}
@@ -154,7 +151,7 @@ class Events(object):
                     if abs(event['seconds'] - nowsec) < 7.5 * 60:
                         if abs(val - event['val']) < self.threshold:
                             # add event
-                            print("Adding: ", val, event['val'], nowsec, event['seconds'])
+                            # print("Adding: ", val, event['val'], nowsec, event['seconds'])
                             self.data['events'].append({
                                     'seconds': (nowsec + event['seconds']) / 2.0,
                                     'val': (val + event['val']) / 2.0,
@@ -196,5 +193,5 @@ class Events(object):
         seconds = seconds % (60 * 60)
         minute = seconds / 60
         second = seconds % 60
-        # 2001 starts on a monday
+        # 2001 starts on a monday, so it makes the week system work
         return datetime(year=2001, month=1, day=1 + int(weekday), second=int(second), minute=int(minute), hour=int(hour)).strftime('%a %H:%M')
