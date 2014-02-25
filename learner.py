@@ -399,7 +399,6 @@ class Events(object):
 
     def saveData(self):
         try:
-            print("Saving...")
             filedata = json.dumps(self.events.toDict(), sort_keys=True, indent=2, separators=(',', ': '))
             learnfile = open(self.filename, 'w')
             learnfile.write(filedata)
@@ -419,9 +418,6 @@ class Events(object):
 
                 le = self.events.lastEvent() # last event
                 ne = self.events.nextEvent() # next event
-                print(le.toObject())
-                print(ne.toObject())
-                print((normTime - le.time).total_seconds())
                 if le and 0 <= (normTime - le.time).total_seconds() < self.timethreshold: # if close enough to last event
                     if le.change and 0 <= (normTime - le.change.updated).total_seconds() < self.timethreshold: # recently modified
                         # update change
@@ -429,11 +425,9 @@ class Events(object):
                     else:
                         if not le == ne and abs(val - le.p.val) < self.valthreshold:
                             # prepare to cancel event
-                            print("cancel last?")
                             if le.change:
                                 if abs(val - le.change.val) < self.valthreshold: # cancel event
                                     self.events.remove(le)
-                                    print("cancel last.")
                                 else: # update change
                                     le.change.val = (le.change.val + val) / 2.0
                                     le.change.time = le.change.time + (normTime - le.change.time) / 2.0
@@ -441,10 +435,8 @@ class Events(object):
                             else:
                                 le.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
                         else:
-                            print("change last?")
                             # prepare to change event's val
                             if le.change:
-                                print("change last.")
                                 le.val = (le.change.val + val + le.val) / 3.0 # update event
                                 le.updated = now
                                 del le.change
@@ -457,11 +449,9 @@ class Events(object):
                         ne.change.val = val
                     else:
                         if abs(val - ne.val) < self.valthreshold:
-                            print("move next?")
                             # move next event earlier
                             if ne.change:
                                 if abs(val - ne.change.val) < self.valthreshold: # move event
-                                    print("move next.")
                                     ne.val = (ne.change.val + val + ne.val) / 3.0
                                     ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2.0) - ne.time) / 2.0)
                                     ne.updated = now
@@ -474,12 +464,10 @@ class Events(object):
                             else:
                                 ne.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
                         elif not ne == le and abs(val - ne.n.val) < self.valthreshold:
-                            print("cancel next?")
                             self.scheduled.cancel() # cancel next event
                             self.scheduleFollowingEvent(ne)
                             if ne.change:
                                 if abs(val - ne.change.val) < self.valthreshold: # cancel event
-                                    print("cancel next.")
                                     self.events.remove(ne)
                                 else: # update change
                                     ne.change.val = (ne.change.val + val) / 2.0
@@ -489,7 +477,6 @@ class Events(object):
                                 ne.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
                     # TODO: cancel next event this time
                 else: # new event
-                    print("add event?")
                     if le and ne:
                         if le.n == ne: # no uncertain events
                             self.events.addAfter(self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val))
@@ -501,8 +488,6 @@ class Events(object):
                             if walker == ne: # no uncertain events match
                                 self.events.addAfter(self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val))
                             else:
-                                print("add event.")
-                                print(walker.toObject())
                                 walker.certain = True
 
                 # TODO: how can i move an events' time forward?

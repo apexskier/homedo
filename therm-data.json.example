@@ -1,0 +1,14 @@
+[
+  {
+    "certain": true,
+    "change": {
+      "certain": false,
+      "time": "Mon 19:01",
+      "updated": "Mon Feb 24 19:01:22 2014",
+      "val": 56.1764705882353
+    },
+    "time": "Mon 18:59",
+    "updated": "Mon Feb 24 19:01:22 2014",
+    "val": 55.78735050762268
+  }
+]
