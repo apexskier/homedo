@@ -23,7 +23,6 @@ class Thermostat(object):
         self.timer.start()
 
     def tick(self):
-        @self.learner.applyEvent
         def _tick(self):
             self.timer.cancel()
             self.timer = threading.Timer(10, self.tick)
@@ -90,7 +89,7 @@ if __name__ == '__main__':
     for i in range(0, 15):
         print(i)
         time.sleep(1)
-    print("trying some sets")
+    print("Trying a set.")
     thermostat.set(60)
     print thermostat.get()
     thermostat.off()
