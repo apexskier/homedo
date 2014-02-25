@@ -430,7 +430,7 @@ class Events(object):
                                     self.events.remove(le)
                                 else: # update change
                                     le.change.val = (le.change.val + val) / 2.0
-                                    le.change.time = le.change.time + (normTime - le.change.time) / 2.0
+                                    le.change.time = le.change.time + (normTime - le.change.time) / 2
                                     le.change.updated = now
                             else:
                                 le.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
@@ -453,13 +453,13 @@ class Events(object):
                             if ne.change:
                                 if abs(val - ne.change.val) < self.valthreshold: # move event
                                     ne.val = (ne.change.val + val + ne.val) / 3.0
-                                    ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2.0) - ne.time) / 2.0)
+                                    ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2) - ne.time) / 2)
                                     ne.updated = now
                                     del ne.change
                                     ne.change = None
                                 else: # update change
                                     ne.change.val = (ne.change.val + val) / 2.0
-                                    ne.change.time = ne.change.time + (normTime - ne.change.time) / 2.0
+                                    ne.change.time = ne.change.time + (normTime - ne.change.time) / 2
                                     le.change.updated = now
                             else:
                                 ne.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
@@ -471,7 +471,7 @@ class Events(object):
                                     self.events.remove(ne)
                                 else: # update change
                                     ne.change.val = (ne.change.val + val) / 2.0
-                                    ne.change.time = ne.change.time + (normTime - ne.change.time) / 2.0
+                                    ne.change.time = ne.change.time + (normTime - ne.change.time) / 2
                                     ne.change.updated = now
                             else:
                                 ne.change = self._event(now.strftime('%a %H:%M'), now.strftime('%c'), val)
