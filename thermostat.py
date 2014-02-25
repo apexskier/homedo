@@ -72,6 +72,7 @@ class Thermostat(object):
     def off(self):
         self.timer.cancel()
         self.sensor.off()
+        self.learner.off()
         wiringpi.digitalWrite(self.THERM, 0)
 
 
