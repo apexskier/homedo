@@ -15,6 +15,7 @@ class Thermostat(object):
         self.IN = 0
         self.PWM = 0
         self.learner = learner.Events(self, 'therm', 55, 5, 5 * 60)
+        self.set_lock = threading.RLock()
 
         wiringpi.digitalWrite(self.THERM, 0)
 
@@ -40,16 +41,17 @@ class Thermostat(object):
         _tick(self)
 
     def set(self, target_temp):
-        @self.learner.watchEvent
-        def _set(self, target_temp):
-            self.target_temp = float(target_temp)
-            if self.current_temp and self.current_temp < self.target_temp and not self.heat_on:
-                self.heat_on = True
-                wiringpi.digitalWrite(self.THERM, 1)
-            elif self.current_temp > self.target_temp and self.heat_on:
-                self.heat_on = False
-                wiringpi.digitalWrite(self.THERM, 0)
-        _set(self, target_temp)
+        with self.set_lock:
+            @self.learner.watchEvent
+            def _set(self, target_temp):
+                self.target_temp = float(target_temp)
+                if self.current_temp and self.current_temp < self.target_temp and not self.heat_on:
+                    self.heat_on = True
+                    wiringpi.digitalWrite(self.THERM, 1)
+                elif self.current_temp > self.target_temp and self.heat_on:
+                    self.heat_on = False
+                    wiringpi.digitalWrite(self.THERM, 0)
+            _set(self, target_temp)
 
     def get(self):
         try:
