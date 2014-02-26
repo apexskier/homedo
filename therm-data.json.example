@@ -1,13 +1,49 @@
 [
   {
+    "certain": false,
+    "time": "Tue 19:34:23",
+    "updated": "Tue Feb 25 19:34:23 2014",
+    "val": 68.64754098360656
+  },
+  {
     "certain": true,
     "change": {
       "certain": false,
-      "time": "Mon 19:01",
+      "time": "Mon 21:17:00",
+      "updated": "Mon Feb 24 21:17:05 2014",
+      "val": 57.903225806451616
+    },
+    "time": "Mon 21:17:00",
+    "updated": "Mon Feb 24 21:17:05 2014",
+    "val": 56.54838709677419
+  },
+  {
+    "certain": true,
+    "time": "Tue 07:00:00",
+    "updated": "Mon Feb 24 21:57:00 2014",
+    "val": 67.0
+  },
+  {
+    "certain": true,
+    "time": "Tue 08:30:00",
+    "updated": "Mon Feb 24 21:57:00 2014",
+    "val": 55.0
+  },
+  {
+    "certain": false,
+    "time": "Tue 19:32:08",
+    "updated": "Tue Feb 25 19:32:08 2014",
+    "val": 69.65163934426229
+  },
+  {
+    "certain": true,
+    "change": {
+      "certain": false,
+      "time": "Mon 19:01:00",
       "updated": "Mon Feb 24 19:01:22 2014",
       "val": 56.1764705882353
     },
-    "time": "Mon 18:59",
+    "time": "Mon 18:59:00",
     "updated": "Mon Feb 24 19:01:22 2014",
     "val": 55.78735050762268
   }
