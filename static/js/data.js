@@ -93,8 +93,18 @@ d3.json(jsonfile, function(err, json) {
             return val_y(d.val);
         });
 
-    graph.append('path').attr('d', line(certain)).attr('class', 'line certain');
-    graph.append('path').attr('d', line(data)).attr('class', 'line uncertain');
+    var r = jsonfile.split('/')
+    d3.json('/data/real-' + r[r.length - 1], function(err, json) {
+        if (err) return console.warn(err);
+        json.forEach(function(el) {
+            el.time = new Date(el.time);
+        });
+        data = json.filter(function(el) {
+            return el.time > lm;
+        });
+        console.log(data);
+        graph.append('path').attr('d', line(data)).attr('class', 'line real');
+    })
 
     var valpoint = graph.append('circle')
         .attr('cx', function(d) { return time_x(now); })
@@ -106,4 +116,7 @@ d3.json(jsonfile, function(err, json) {
         .attr('cy', function(d) { return val_y(curtar); })
         .attr('r', 3.5)
         .attr('class', 'target');
+
+    graph.append('path').attr('d', line(certain)).attr('class', 'line certain');
+    graph.append('path').attr('d', line(data)).attr('class', 'line uncertain');
 });

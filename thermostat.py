@@ -1,7 +1,9 @@
-import threading, datetime
+from threading import Timer, RLock
+from datetime import datetime
 import wiringpi2 as wiringpi
 from libs.AM2302.temp_humid_sensor import Sensor
 import learner
+import jsonlog
 
 class Thermostat(object):
     def __init__(self, therm_pin, sensor_pin, target_temp=55):
@@ -15,18 +17,21 @@ class Thermostat(object):
         self.IN = 0
         self.PWM = 0
         self.learner = learner.Events(self, 'therm', 55, 5, 5 * 60)
-        self.set_lock = threading.RLock()
+        self.set_lock = RLock()
 
         wiringpi.digitalWrite(self.THERM, 0)
 
         # give some time to read an initial temperature
-        self.timer = threading.Timer(15, self.tick)
+        self.timer = Timer(15, self.tick)
         self.timer.start()
+        self.temp_log_timer = Timer(5 * 60, self.logTemp)
+        self.temp_log_timer.start()
+        self.temp_logger = jsonlog.jsonLog('real-therm-data')
 
     def tick(self):
         def _tick(self):
             self.timer.cancel()
-            self.timer = threading.Timer(10, self.tick)
+            self.timer = Timer(10, self.tick)
             self.timer.start()
 
             t = self.sensor.get()
@@ -39,6 +44,16 @@ class Thermostat(object):
                     self.heat_on = False
                     wiringpi.digitalWrite(self.THERM, 0)
         _tick(self)
+
+    def logTemp(self):
+        if self.current_temp:
+            self.temp_logger.log({
+                    'time': datetime.now().strftime("%c"),
+                    'val': self.get(),
+                    'on': self.heat_on
+                })
+        self.temp_log_timer = Timer(5 * 60, self.logTemp)
+        self.temp_log_timer.start()
 
     def set(self, target_temp):
         with self.set_lock:
@@ -70,11 +85,13 @@ class Thermostat(object):
         return self.heat_on
 
     def off(self):
-        self.timer.cancel()
+        if self.timer:
+            self.timer.cancel()
+        if self.temp_log_timer:
+            self.temp_log_timer.cancel()
         self.sensor.off()
         self.learner.off()
         wiringpi.digitalWrite(self.THERM, 0)
-
 
 if __name__ == '__main__':
     import signal, sys
