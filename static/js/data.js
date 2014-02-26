@@ -28,7 +28,7 @@ var days = {
     'Sun': 6
 }
 
-d3.json(jsonfile, function(err, json) {
+d3.json(jsonfile, function(err, targets) {
     if (err) return console.warn(err);
     var lm = getMonday(new Date());
     var now = new Date();
@@ -40,8 +40,7 @@ d3.json(jsonfile, function(err, json) {
         nd.setHours(0, 0, 0, 0);
         return nd;
     }
-    console.log(lm);
-    json.forEach(function(el) {
+    targets.forEach(function(el) {
         var day = days[el.time.split(' ')[0]];
         var time = el.time.split(' ')[1].split(':');
         var d = new Date(lm);
@@ -49,52 +48,18 @@ d3.json(jsonfile, function(err, json) {
         d.setHours(time[0], time[1], time[2]);
         el.time = d;
     });
-    json.sort(function(a, b) {
+    targets.sort(function(a, b) {
         return a.time - b.time;
     });
-    var data = [];
-    var certainraw = json.filter(function(el) {
+    var certain = targets.filter(function(el) {
         return el.certain;
     });
-    json.forEach(function(el, i) {
-        data.push(el);
-        if (i + 1 < json.length) {
-            var n = {
-                time: new Date(json[i + 1].time - 1),
-                val: el.val,
-            };
-            data.push(n);
-        }
-    });
-    var certain = []
-    certainraw.forEach(function(el, i) {
-        certain.push(el);
-        if (i + 1 < certainraw.length) {
-            var n = {
-                time: new Date(certainraw[i + 1].time - 1),
-                val: el.val,
-            };
-            certain.push(n);
-        }
-    });
-
-    time_x.domain(d3.extent(data.map(function(d) { return d.time; })));
-    val_y.domain([0, d3.max(data.map(function(d) { return d.val; }))]);
 
     var graph = svg.append('g').attr('transform', 'translate(' + m[3] + ',' + m[0] + ')')
     graph.append('g').attr('class', 'x axis').attr('transform', "translate(0," + h + ")").call(timeAxisX);
     graph.append('g').attr('class', 'y axis').call(valAxisY);
 
-    var line = d3.svg.line()
-        .x(function(d, i) {
-            return time_x(d.time);
-        })
-        .y(function(d, i) {
-            return val_y(d.val);
-        });
-
-    graph.append('path').attr('d', line(certain)).attr('class', 'line certain');
-    graph.append('path').attr('d', line(data)).attr('class', 'line uncertain');
+    val_y.domain([50, 80]);
 
     var r = jsonfile.split('/')
     d3.json('/data/real-' + r[r.length - 1], function(err, json) {
@@ -102,11 +67,34 @@ d3.json(jsonfile, function(err, json) {
         json.forEach(function(el) {
             el.time = new Date(el.time);
         });
-        data = json.filter(function(el) {
+        reals = json.filter(function(el) {
             return el.time > lm;
         });
-        console.log(data);
-        graph.append('path').attr('d', line(data)).attr('class', 'line real');
+
+        time_x.domain(d3.extent(
+            targets.map(function(d) { return d.time; }).concat(reals.map(function(d) { return d.time; }))
+        ));
+
+        var linestep = d3.svg.line()
+            .interpolate('step-after')
+            .x(function(d, i) {
+                return time_x(d.time);
+            })
+            .y(function(d, i) {
+                return val_y(d.val);
+            });
+        var linesmooth = d3.svg.line()
+            .interpolate('linear')
+            .x(function(d, i) {
+                return time_x(d.time);
+            })
+            .y(function(d, i) {
+                return val_y(d.val);
+            });
+
+        graph.append('path').attr('d', linestep(certain)).attr('class', 'line certain');
+        graph.append('path').attr('d', linestep(targets)).attr('class', 'line uncertain');
+        graph.append('path').attr('d', linesmooth(reals)).attr('class', 'line real');
 
         var valpoint = graph.append('circle')
             .attr('cx', function(d) { return time_x(now); })
