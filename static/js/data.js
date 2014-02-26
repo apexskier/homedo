@@ -18,6 +18,23 @@ var svg = d3.select('#main').append('svg')
     .attr('width', w + m[1] + m[3])
     .attr('height', h + m[0] + m[2]);
 
+var linestep = d3.svg.line()
+    .interpolate('step-after')
+    .x(function(d, i) {
+        return time_x(d.time);
+    })
+    .y(function(d, i) {
+        return val_y(d.val);
+    });
+var linesmooth = d3.svg.line()
+    .interpolate('linear')
+    .x(function(d, i) {
+        return time_x(d.time);
+    })
+    .y(function(d, i) {
+        return val_y(d.val);
+    });
+
 var days = {
     'Mon': 0,
     'Tue': 1,
@@ -56,10 +73,10 @@ d3.json(jsonfile, function(err, targets) {
     });
 
     var graph = svg.append('g').attr('transform', 'translate(' + m[3] + ',' + m[0] + ')')
-    graph.append('g').attr('class', 'x axis').attr('transform', "translate(0," + h + ")").call(timeAxisX);
-    graph.append('g').attr('class', 'y axis').call(valAxisY);
 
     val_y.domain([50, 80]);
+    graph.append('g').attr('class', 'y axis').call(valAxisY);
+
 
     var r = jsonfile.split('/')
     d3.json('/data/real-' + r[r.length - 1], function(err, json) {
@@ -74,23 +91,7 @@ d3.json(jsonfile, function(err, targets) {
         time_x.domain(d3.extent(
             targets.map(function(d) { return d.time; }).concat(reals.map(function(d) { return d.time; }))
         ));
-
-        var linestep = d3.svg.line()
-            .interpolate('step-after')
-            .x(function(d, i) {
-                return time_x(d.time);
-            })
-            .y(function(d, i) {
-                return val_y(d.val);
-            });
-        var linesmooth = d3.svg.line()
-            .interpolate('linear')
-            .x(function(d, i) {
-                return time_x(d.time);
-            })
-            .y(function(d, i) {
-                return val_y(d.val);
-            });
+        graph.append('g').attr('class', 'x axis').attr('transform', "translate(0," + h + ")").call(timeAxisX);
 
         graph.append('path').attr('d', linestep(certain)).attr('class', 'line certain');
         graph.append('path').attr('d', linestep(targets)).attr('class', 'line uncertain');
