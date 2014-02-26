@@ -177,6 +177,15 @@ def control(ws):
 def send_static(filename):
     return static_file(filename, root='static')
 
+@get('/therm/data')
+def therm_data():
+    context = {
+            'target': "therm",
+            'curval': targets['therm']['driver'].get(),
+            'curtar': targets['therm']['driver'].get_target()
+        }
+    return template('views/data', ctx=context)
+
 @route('/login')
 @view('login')
 def login_form():
@@ -201,6 +210,10 @@ def robots():
 @route('/humans.txt')
 def robots():
     return static_file('humans.txt', root='static')
+
+@route('/data/<filename>-data.json')
+def data_file(filename):
+    return static_file(filename + '-data.json', root='')
 
 
 """""

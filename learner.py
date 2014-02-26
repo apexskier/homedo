@@ -278,7 +278,7 @@ class Events(object):
                     else: # uncertain events have been seen
                         # check uncertain events to see if they match
                         walker = le.n
-                        while walker.certain == False and abs(val - walker.val) > self.valthreshold and abs(time - walker.time).total_seconds() > self.timethreshold:
+                        while walker.certain == False and abs(val - walker.val) > self.valthreshold and abs(normTime - walker.time).total_seconds() > self.timethreshold:
                             walker = walker.n
                         if walker == ne: # no uncertain events match
                             self.events.addAfter(self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val))

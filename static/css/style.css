@@ -58,3 +58,24 @@ html, body,
 .target .inner {
     background-image: -webkit-linear-gradient(top, #ff8800 0%, #0088ff 100%);
 }
+
+/* data */
+.line, .target {
+    stroke: steelblue;
+    stroke-width: 2;
+}
+.line {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke-linejoin: round;
+}
+.uncertain {
+    opacity: 0.5;
+}
+.target, .val {
+    fill: white;
+}
+.val {
+    stroke: orange;
+    stroke-width: 2;
+}
