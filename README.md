@@ -10,10 +10,11 @@ Internet connected thermostat and lights.
 
 Learns based on events. "Set 65 at this time, set 58 at this time..."
 
-This could use a lot of work.
-- Events should chain.
-- Changes to events should be applied immediately if they are close to existing events.
-- Changes should be applied after reccurrence if they are sort of close to existing events.
+Events chain off of one another in a doubly linked list. So, the thermostat
+only needs to know what the last event was. It can then schedule the next one,
+know what event needs changing with manual user input, etc. This also lends
+itself to a thermostat. If I make a manual change, the target doesn't get reset
+until the next event.
 
 ## Setup
 
@@ -32,8 +33,6 @@ This could use a lot of work.
 
 ### Todo
 
-- Learner should be a list of events, one following another.
-  This makes more sense, as changes happen from one to another (on to off to on).
 - Make it work reliably without sudo/session setup.
 - Make it work on one page.
 - Automatically generate pages for each target in system.
