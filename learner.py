@@ -44,8 +44,12 @@ class Events(object):
                 print(event['time'])
                 c = None
                 if 'change' in event and event['change']:
-                    c = self._event(event['change']['time'], event['change']['updated'], event['change']['val'])
-                t = self._event(event['time'], event['updated'], event['val'], change=c, certain=event['certain'])
+                    tmt = datetime.strptime(event['change']['time'], '%a %H:%M:%S')
+                    tmt += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[event['change']['time'][:3]])
+                    c = self._event(tmt, event['change']['updated'], event['change']['val'])
+                tmt = datetime.strptime(event['time'], '%a %H:%M:%S')
+                tmt += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[event['time'][:3]])
+                t = self._event(tmt, event['updated'], event['val'], change=c, certain=event['certain'])
                 self.events.addAfter(t)
 
             # schedule next event
@@ -105,26 +109,6 @@ class Events(object):
                 event.p.n = event.n
                 del event
 
-        def lastEvent(self):
-            if self.pos:
-                if self.pos == self.pos.p:
-                    return self.pos
-                p = self.pos
-                while p.certain == False:
-                    p = p.p
-                return p
-            return None
-
-        def nextEvent(self):
-            if self.pos:
-                if self.pos == self.pos.n:
-                    return self.pos
-                n = self.pos.n
-                while n.certain == False:
-                    n = n.n
-                return n
-            return None
-
         def display(self):
             def _d(l, head):
                 if l == head:
@@ -151,8 +135,7 @@ class Events(object):
 
     class _event(object):
         def __init__(self, time, updated, val, n=None, p=None, change=None, certain=False):
-            self.time = datetime.strptime(time, '%a %H:%M:%S')
-            self.time += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[time[:3]])
+            self.time = Events.normTime(time)
             self.updated = datetime.strptime(updated, '%c')
             self.val = float(val)
             self.certain = certain
@@ -200,6 +183,7 @@ class Events(object):
     def watchEvent(self, func):
         def wrapper(funcself, val):
             with self.lock:
+                print(val)
                 if self.wait:
                     self.wait.cancel()
                 self.wait = threading.Timer(10, self.watchEventInner, [val, datetime.now()])
@@ -211,12 +195,15 @@ class Events(object):
         with self.lock:
             normTime = Events.normTime(now)
 
-            le = self.events.lastEvent() # last event
-            ne = self.events.nextEvent() # next event
+            le = self.le # last event
+            print('le', le.toObject())
+            ne = self.ne # next event
+            print('ne', ne.toObject())
             if le and 0 <= (normTime - le.time).total_seconds() < self.timethreshold: # if close enough to last event
-                if le.change and 0 <= (normTime - le.change.updated).total_seconds() < self.timethreshold: # recently modified
+                if le.change and 0 <= (now - le.change.updated).total_seconds() < self.timethreshold: # recently modified
                     # update change
                     le.change.val = val
+                    le.change.updated = now
                 else:
                     if not le == ne and abs(val - le.p.val) < self.valthreshold:
                         # prepare to cancel event
@@ -225,23 +212,24 @@ class Events(object):
                                 self.events.remove(le)
                             else: # update change
                                 le.change.val = (le.change.val + val) / 2.0
-                                le.change.time = le.change.time + (normTime - le.change.time) / 2
+                                le.change.time = normTime
                                 le.change.updated = now
                         else:
-                            le.change = self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val)
+                            le.change = self._event(now, now.strftime('%c'), val)
                     else:
                         # prepare to change event's val
-                        le.val = (le.change.val + val + le.val) / 3.0 # update event
+                        le.val = (val + le.val) / 2.0 # update event
                         le.updated = now
             elif ne and 0 <= (ne.time - normTime).total_seconds() < self.timethreshold: # if close enough to next event
-                if ne.change and 0 <= (ne.change.updated - normTime).total_seconds() < self.timethreshold: # recently modified
+                if ne.change and 0 <= (now - ne.change.updated).total_seconds() < self.timethreshold: # recently modified
                     # update change
                     ne.change.val = val
+                    ne.change.updated = now
                 else:
                     if abs(val - ne.val) < self.valthreshold:
                         # move next event earlier
-                        ne.val = (ne.change.val + val + ne.val) / 3.0
-                        ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2) - ne.time) / 2)
+                        ne.val = (val + ne.val) / 2.0
+                        ne.time = normTime
                         ne.updated = now
                     elif not ne == le and abs(val - ne.n.val) < self.valthreshold:
                         self.scheduled.cancel() # cancel next event
@@ -251,24 +239,39 @@ class Events(object):
                                 self.events.remove(ne)
                             else: # update change
                                 ne.change.val = (ne.change.val + val) / 2.0
-                                ne.change.time = ne.change.time + (normTime - ne.change.time) / 2
+                                ne.change.time = normTime
                                 ne.change.updated = now
                         else:
-                            ne.change = self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val)
+                            ne.change = self._event(now, now.strftime('%c'), val)
                 # TODO: cancel next event this time
             else: # new event
                 if le and ne:
+                    print(le.toObject());
                     if le.n == ne: # no uncertain events
-                        self.events.addAfter(self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val))
+                        print("no uncertain events")
+                        self.events.addAfter(self._event(now, now.strftime('%c'), val), le)
                     else: # uncertain events have been seen
                         # check uncertain events to see if they match
                         walker = le.n
-                        while walker.certain == False and abs(val - walker.val) > self.valthreshold and abs(normTime - walker.time).total_seconds() > self.timethreshold:
+                        newevent = True
+                        while walker.certain != ne:
+                            print((now - walker.updated).total_seconds())
+                            if abs(now - walker.updated).total_seconds() < self.timethreshold: # recently modified
+                                # update change
+                                walker.val = val
+                                walker.updated = now
+                                newevent = False
+                                break
+                            elif abs((walker.time - normTime).total_seconds()) < self.timethreshold:
+                                print("Saving new event")
+                                walker.certain = True
+                                walker.val = val
+                                walker.time = normTime
+                                newevent = False
+                                break
                             walker = walker.n
-                        if walker == ne: # no uncertain events match
-                            self.events.addAfter(self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val))
-                        else:
-                            walker.certain = True
+                        if newevent: # no uncertain events match
+                            self.events.addBefore(self._event(now, now.strftime('%c'), val), le)
 
             # TODO: how can i move an events' time forward?
             self.saveData()
@@ -278,6 +281,7 @@ class Events(object):
             self.scheduled.cancel()
             self.scheduled = None
         if event:
+            self.le = event
             e = event.n
             while e.certain == False and not e == event:
                 e = event.n
@@ -285,6 +289,8 @@ class Events(object):
             self.scheduled = threading.Timer(secs, self.doEvent, [e])
             self.scheduled.start()
             self.events.pos = self.events.pos.n
+            self.ne = e
+            print('NE', self.ne.toObject())
             print("Scheduled {}, {} in {} seconds.".format(e.time.strftime('%a %H:%M:%S'), e.val, secs))
 
     def doEvent(self, event):

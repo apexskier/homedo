@@ -67,7 +67,7 @@ var circle = svg.append('circle')
     .attr('cy', cy)
     .attr('stroke', '#fff')
     .attr('fill', function() {
-        if (currenttemp > targettemp + 2) {
+        if (currenttemp > targettemp - 2) {
             return 'steelblue';
         } else {
             return '#ff8800';
