@@ -231,13 +231,8 @@ class Events(object):
                             le.change = self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val)
                     else:
                         # prepare to change event's val
-                        if le.change:
-                            le.val = (le.change.val + val + le.val) / 3.0 # update event
-                            le.updated = now
-                            del le.change
-                            le.change = None
-                        else:
-                            le.change = self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val)
+                        le.val = (le.change.val + val + le.val) / 3.0 # update event
+                        le.updated = now
             elif ne and 0 <= (ne.time - normTime).total_seconds() < self.timethreshold: # if close enough to next event
                 if ne.change and 0 <= (ne.change.updated - normTime).total_seconds() < self.timethreshold: # recently modified
                     # update change
@@ -245,19 +240,9 @@ class Events(object):
                 else:
                     if abs(val - ne.val) < self.valthreshold:
                         # move next event earlier
-                        if ne.change:
-                            if abs(val - ne.change.val) < self.valthreshold: # move event
-                                ne.val = (ne.change.val + val + ne.val) / 3.0
-                                ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2) - ne.time) / 2)
-                                ne.updated = now
-                                del ne.change
-                                ne.change = None
-                            else: # update change
-                                ne.change.val = (ne.change.val + val) / 2.0
-                                ne.change.time = ne.change.time + (normTime - ne.change.time) / 2
-                                le.change.updated = now
-                        else:
-                            ne.change = self._event(now.strftime('%a %H:%M:%S'), now.strftime('%c'), val)
+                        ne.val = (ne.change.val + val + ne.val) / 3.0
+                        ne.time = ne.time + (((ne.change.time + (normTime - ne.change.time) / 2) - ne.time) / 2)
+                        ne.updated = now
                     elif not ne == le and abs(val - ne.n.val) < self.valthreshold:
                         self.scheduled.cancel() # cancel next event
                         self.scheduleFollowingEvent(ne)

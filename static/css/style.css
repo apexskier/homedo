@@ -66,11 +66,14 @@ html, body,
 }
 .line {
     fill: none;
-    shape-rendering: crispEdges;
     stroke-linejoin: round;
 }
 .uncertain {
     opacity: 0.5;
+    shape-rendering: crispEdges;
+}
+.certain {
+    shape-rendering: crispEdges;
 }
 .target, .val {
     fill: white;
@@ -81,4 +84,23 @@ html, body,
 }
 .real {
     stroke: orange;
+}
+
+#main {
+    padding: 0;
+}
+.text {
+    text-align: center;
+    fill: #fff;
+}
+.tar {
+    font-size: 110px;
+    padding-top: 20px;
+}
+.current {
+    font-size: 20px;
+}
+.schedule {
+    text-align: center;
+    font-size: 22px;
 }

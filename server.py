@@ -48,6 +48,24 @@ def index():
                 )
     return template('views/therm', ctx=context)
 
+@get('/therm')
+@authorize()
+def index():
+    context = targets
+    for key, item in context.items():
+        driver_type = type(item['driver'])
+        item['val'] = item['driver'].get()
+        if driver_type == Thermostat:
+            item['time'] = item['driver'].get_last_time()
+            item['target'] = item['driver'].get_target()
+        elif driver_type == RGBDriver:
+            item['hsv'] = colorsys.rgb_to_hsv(
+                    item['val'][0] / 255,
+                    item['val'][1] / 255,
+                    item['val'][2] / 255
+                )
+    return template('views/therm2', ctx=context)
+
 @get('/rgb')
 @authorize()
 def rgb():
@@ -86,8 +104,8 @@ class WebSocketControl(WebSocketApplication):
                 driver = targets[str(data[u'target'])]['driver']
                 driver_type = type(driver)
                 action = data[u'action']
+                ret['action'] = action
                 if action == 'set':
-                    ret['action'] = 'set'
                     if driver_type == RGBDriver:
                         f = str(data[u'format'])
                         c = [0, 0, 0]
@@ -116,7 +134,6 @@ class WebSocketControl(WebSocketApplication):
                         driver.set(data[u'val'])
                     ret['status'] = 'success'
                 elif action == 'get':
-                    ret['action'] = 'get'
                     try:
                         if driver_type == RGBDriver:
                             f = str(data[u'format'])

@@ -21,16 +21,7 @@
         </div>
     </div>
     <div class="container-fluid content">
-        <div class="content-inner">
-            <div class="col-xs-6" id="current-temp">
-            </div>
-            <div class="col-xs-6 target">
-                <div class="inner">
-                    <div class="handle">
-                        <span class="text"></span>
-                    </div>
-                </div>
-            </div>
+        <div class="content-inner" id="main">
         </div>
     </div>
     <div class="navbar navbar-default navbar-fixed-bottom">
@@ -59,6 +50,6 @@
         var currenttemp = {{ ctx['therm']['val'] if ctx['therm']['val'] else "bounds.bot" }};
         var curperc = (currenttemp - bounds.bot) / (bounds.top - bounds.bot);
     </script>
-    <script src="/static/js/therm.js"></script>
+    <script src="/static/js/therm2.js"></script>
 </body>
 </html>
