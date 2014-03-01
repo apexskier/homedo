@@ -21,29 +21,7 @@
         </div>
     </div>
     <div class="container-fluid content">
-        <div class="content-inner">
-            <div class="col-xs-6" id="current-temp">
-            </div>
-            <div class="col-xs-6 target">
-                <div class="inner">
-                    <div class="handle">
-                        <span class="text"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="navbar navbar-default navbar-fixed-bottom">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-xs-6">
-                    <button class="btn btn-default navbar-btn btn-block">Off</button>
-                </div>
-                <div class="col-xs-6">
-                </div>
-            </div>
-        </div>
-        <div class="collapse navbar-collapse" id="bottom">
+        <div class="content-inner" id="main">
         </div>
     </div>
 
