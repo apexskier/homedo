@@ -4,8 +4,6 @@
 
 Internet connected thermostat and lights.
 
-![Picture of my setup. Sketttcchhh.](https://photos-5.dropbox.com/t/0/AAATmIlvcY2K2Xv1fFao9tQm0HkWQJJK1ttFRmVds2WUaw/12/5821804/jpeg/1024x768/3/1393012800/0/2/2014-02-14%2019.06.17.jpg/2uZPzay2LqMvYsvbfiaZ9AgHwN_kC9h1LzyYebcbu4E)
-
 ## Learning
 
 Learns based on events. "Set 65 at this time, set 58 at this time..."
