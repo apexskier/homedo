@@ -84,6 +84,9 @@ class Thermostat(object):
     def get_status(self):
         return self.heat_on
 
+    def get_scheduled(self):
+        return self.learner.getScheduled()
+
     def off(self):
         if self.timer:
             self.timer.cancel()

@@ -10,9 +10,6 @@ import private
 from settings import *
 import logging
 
-logging.basicConfig(filename='server.log', level=logging.DEBUG)
-logger = logging.getLogger('server')
-
 app = bottle.app()
 app = SessionMiddleware(app, private.session_opts)
 
@@ -88,8 +85,10 @@ class WebSocketControl(WebSocketApplication):
     def on_open(self):
         if self.ws:
             try:
-                ret = json.dumps({"testing": "hello"})
-                self.ws.send(ret)
+                ret = targets['therm']['driver'].get_scheduled()
+                ret['action'] = 'scheduled'
+                ret['status'] = 'success'
+                self.ws.send(json.dumps(ret))
             except WebSocketError:
                 logger.warning("WebSocketError on hello.")
         else:

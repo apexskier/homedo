@@ -10,6 +10,18 @@ bounds.range = bounds.top - bounds.bot;
 var result = arr[2];
 ws = new WebSocket('ws://' + result + '/control');
 var page;
+(function() {
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    Date.prototype.getMonthName = function() {
+        return months[ this.getMonth() ];
+    };
+    Date.prototype.getDayName = function() {
+        return days[ this.getDay() ];
+    };
+})();
 ws.onopen = function(evt) {
     console.log('Websocket connection opened.');
     page = setUp();
@@ -30,6 +42,8 @@ ws.onmessage = function(evt) {
         updateTemp(data.val);
     } else if (data.action == "get_status" && data.status == "success") {
         updateStatus(data.val);
+    } else if (data.action == "scheduled" && data.status == "success") {
+        updateScheduled(data);
     } else {
         console.log('Message recieved');
         console.log(data);
@@ -40,67 +54,102 @@ ws.onclose = function(evt) {
     clearInterval(window.tick);
 }
 
-var h = window.innerHeight - 120;
+var h = window.innerHeight - 60;
 var w = window.innerWidth;
+var body = d3.select('body').style('background-color', function() {
+    if (currenttemp > targettemp - 2) {
+        return 'steelblue';
+    } else {
+        return '#ff8800';
+    }
+});
 var main = d3.select('#main');
 var svg = main.append('svg').attr('height', h).attr('width', w);
 svg.append('defs');
 
 var cr = d3.min([w, h]) / 2 - 60;
-var cy = h / 2 - 25;
+if (cr > 150) {
+    cr = 150;
+}
+var cy = h / 2 - 30;
+var cx = w / 2;
 
-var up = svg.append('circle')
-    .attr('cx', w / 2)
-    .attr('cy', cy - cr + 5)
-    .attr('r', 30)
-    .attr('fill', 'grey');
-var down = svg.append('circle')
-    .attr('cx', w / 2)
-    .attr('cy', cy + cr - 5)
-    .attr('r', 30)
-    .attr('fill', 'grey');
+var upx = cx - 30,
+    upy = cy - cr - 53;
+var up = svg.append('g');
+var uprect = up.append('rect')
+    .attr('x', upx)
+    .attr('y', upy)
+    .attr('height', 40)
+    .attr('width', 60)
+    .attr('rx', 5)
+    .attr('ry', 5)
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 2)
+    .attr('fill', 'transparent');
+var uptext = up.append('text')
+    .attr('class', 'text')
+    .attr('x', upx + 30)
+    .attr('y', upy + 28)
+    .text('Up')
+    .style('font-size', 28)
+    .attr('text-anchor', 'middle');
 
-var circle = svg.append('circle')
+var downx = cx - 45,
+    downy = cy + cr + 13;
+var down = svg.append('g');
+var downrect = down.append('rect')
+    .attr('x', downx)
+    .attr('y', downy)
+    .attr('height', 40)
+    .attr('width', 90)
+    .attr('rx', 5)
+    .attr('ry', 5)
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 2)
+    .attr('fill', 'transparent');
+var downtext = down.append('text')
+    .attr('class', 'text')
+    .attr('x', downx + 45)
+    .attr('y', downy + 28)
+    .text('Down')
+    .style('font-size', 28)
+    .attr('text-anchor', 'middle');
+
+var circle = svg.append('g');
+circle.append('circle')
     .attr('class', 'circle')
     .attr('r', cr)
-    .attr('cx', w / 2)
+    .attr('cx', cx)
     .attr('cy', cy)
-    .attr('stroke', '#fff')
-    .attr('fill', function() {
-        if (currenttemp > targettemp - 2) {
-            return 'steelblue';
-        } else {
-            return '#ff8800';
-        }
-    })
-    .attr('stroke-width', 2);
-var t = svg.append('text')
+    .attr('fill', 'transparent');
+var t = circle.append('text')
     .attr('class', 'text tar')
-    .attr('x', w / 2)
-    .attr('y', cy + (cr * .15))
+    .attr('x', cx)
+    .attr('y', cy + (cr * .2))
     .attr('text-anchor', 'middle');
-var c = svg.append('text')
+var c = circle.append('text')
     .attr('class', 'text current')
-    .attr('x', w / 2)
-    .attr('y', cy + (cr * .52))
+    .attr('x', cx)
+    .attr('y', cy + (cr * .55))
     .attr('text-anchor', 'middle');
 
 var s = svg.append('text')
-    .attr('class', 'schedule')
-    .attr('x', w / 2)
-    .attr('y', cy + cr + 70)
+    .attr('class', 'schedule text')
+    .attr('x', cx)
+    .attr('y', cy + cr + 90)
     .attr('text-anchor', 'middle');
 
 var tarfillclip = svg.select('defs').append('clipPath')
     .attr('id', 'tarfillclip')
     .append('rect')
-    .attr('x', w / 2 - cr)
+    .attr('x', cx - cr)
     .attr('y', cy + cr)
     .attr('width', cr * 2)
     .attr('height', 0);
-var tarfill = svg.append('circle')
+var tarfill = circle.append('circle')
     .attr('r', cr - 12)
-    .attr('cx', w / 2)
+    .attr('cx', cx)
     .attr('cy', cy)
     .attr('fill', 'transparent')
     .attr('stroke', '#fff')
@@ -110,25 +159,18 @@ var tarfill = svg.append('circle')
 var fillclip = svg.select('defs').append('clipPath')
     .attr('id', 'fillclip')
     .append('rect')
-    .attr('x', w / 2 - cr)
+    .attr('x', cx - cr)
     .attr('y', cy + cr)
     .attr('width', cr * 2)
     .attr('height', 0);
-var fill = svg.append('circle')
+var fill = circle.append('circle')
     .attr('r', cr - 6)
-    .attr('cx', w / 2)
+    .attr('cx', cx)
     .attr('cy', cy)
     .attr('fill', 'transparent')
     .attr('stroke', '#fff')
     .attr('clip-path', "url(#fillclip)")
     .attr('stroke-width', 4);
-
-var eventtarget = svg.append('circle')
-    .attr('id', 'eventtarget')
-    .attr('r', cr)
-    .attr('cx', w / 2)
-    .attr('cy', cy)
-    .attr('fill', 'transparent');
 
 function updateTemp(newtemp) {
     if (newtemp > bounds.top) {
@@ -143,9 +185,9 @@ function updateTemp(newtemp) {
         .duration(400)
         .attr('y', cy - cr + (2 * cr) * (1 - curperc))
         .attr('height', (cr * 2) * (curperc));
-    c.text("Currently " + Math.round(currenttemp));
+    c.text("Currently " + Math.round(currenttemp) + "°");
 }
-function updateTarget(newtemp) {
+function updateTargetVis(newtemp) {
     if (newtemp > bounds.top) {
         newtemp = bounds.top;
     } else if (newtemp < bounds.bot) {
@@ -154,29 +196,45 @@ function updateTarget(newtemp) {
     targettemp = newtemp;
     tarperc = (targettemp - bounds.bot) / bounds.range;
 
-    ws.send(JSON.stringify({
-        target: "therm",
-        action: "set",
-        val: targettemp
-    }));
-
     tarfillclip.transition()
         .duration(400)
         .attr('y', cy - cr + (2 * cr) * (1 - tarperc))
         .attr('height', (cr * 2) * (tarperc));
     t.text(Math.round(targettemp));
 }
+function updateTarget(newtemp) {
+    if (newtemp != targettemp) {
+        updateTargetVis(newtemp);
+        ws.send(JSON.stringify({
+            target: "therm",
+            action: "set",
+            val: targettemp
+        }));
+    } else {
+        updateTargetVis(newtemp);
+    }
+}
 function updateStatus(st) {
     console.log(st);
-    circle.transition()
+    body.transition()
         .duration(400)
-        .attr('fill', function() {
+        .style('background-color', function() {
             if (st) {
                 return '#ff8800';
             } else {
                 return 'steelblue';
             }
         });
+}
+function updateScheduled(data) {
+    d = new Date(data.nexttime);
+    now = new Date();
+    dstr = "";
+    if (now.getDayName() != d.getDayName()) {
+        dstr += "on " + d.getDayName().slice(0, 3) + " ";
+    }
+    dstr += "at " + d.getHours() % 12 + ":" + d.getMinutes() + " " + ((d.getHours() > 12) ? "pm" : "am");
+    s.text("Setting to " + Math.round(data.val) + "° " + dstr + ".");
 }
 
 function setUp() {
@@ -189,20 +247,31 @@ function setUp() {
         updateTarget(newval);
         d3.event.preventDefault();
     }
-    eventtarget.on('click', hittarget);
-    eventtarget.on('touchend', hittarget);
+    circle.on('touchend', hittarget).on('click', hittarget);
     function hitup(d, i) {
         updateTarget(targettemp + 1);
         d3.event.preventDefault();
+        uprect.attr('fill', 'transparent').attr('stroke', '#fff');
+        uptext.style('fill', '#fff');
     };
-    up.on('click', hitup);
-    up.on('touchend', hitup);
+    function activeup(d, i) {
+        uprect.attr('fill', '#fff').attr('stroke', 'steelblue');
+        uptext.style('fill', 'steelblue');
+    };
+    up.on('click', hitup).on('touchend', hitup);
+    up.on('mousedown', activeup).on('touchstart', activeup);
     function hitdown(d, i) {
         updateTarget(targettemp - 1);
         d3.event.preventDefault();
+        downrect.attr('fill', 'transparent').attr('stroke', '#fff');
+        downtext.style('fill', '#fff');
     };
-    down.on('click', hitdown);
-    down.on('touchend', hitdown);
+    function activedown(d, i) {
+        downrect.attr('fill', '#fff').attr('stroke', 'steelblue');
+        downtext.style('fill', 'steelblue');
+    };
+    down.on('click', hitdown).on('touchend', hitdown);
+    down.on('mousedown', activedown).on('touchstart', activedown);
 
     var activetouch = false;
     svg.on('touchstart', function() {

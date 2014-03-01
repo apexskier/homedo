@@ -2,8 +2,6 @@ from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
 from thermostat import Thermostat
 import logging
 
-applogger = logging.getLogger('Global')
-
 targets = {
         'rgb1': {
             'name': "RGB Lights",

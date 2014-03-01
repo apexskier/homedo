@@ -1,6 +1,8 @@
 import threading, sys
 from datetime import datetime, timedelta
+from settings import *
 import json
+import logging
 
 class Events(object):
     def __init__(self, target, key, valbaseline, valthreshold, timethreshold):
@@ -12,6 +14,18 @@ class Events(object):
             self.baseline = valbaseline # TODO: Calculate based on lowest of events' vals?
             self.valthreshold = valthreshold
             self.timethreshold = timethreshold
+
+            logging.basicConfig(
+                    filename='logs/app.log',
+                    format='[%(asctime)s | %(name)s] %(levelname)s: %(message)s',
+                    level=logging.DEBUG,
+                    datefmt='%m/%d/%Y %H:%M:%S'
+                )
+            self.logger = logging.getLogger('Thermostat')
+            self.logger.setLevel(logging.DEBUG)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+            self.logger.addHandler(ch)
 
             try:
                 learnfile = open(self.filename, 'r')
@@ -41,7 +55,6 @@ class Events(object):
             pe = None
             # populate data
             for event in self.data:
-                print(event['time'])
                 c = None
                 if 'change' in event and event['change']:
                     tmt = datetime.strptime(event['change']['time'], '%a %H:%M:%S')
@@ -65,7 +78,6 @@ class Events(object):
         def findLast(self):
             if self.pos and self.pos.n != self.pos:
                 now = Events.normTime(datetime.now())
-                print('\nnow: ' + now.strftime('%a %H:%M:%S'))
                 # make sure the current pos is the last event to happen
                 while not (self.pos.time < now and self.pos.n.time > now):
                     self.pos = self.pos.n
@@ -74,7 +86,6 @@ class Events(object):
                 return self.pos
 
         def addAfter(self, event, pos=None):
-            print("Adding After")
             if not self.pos:
                 self.pos = event
                 self.pos.n = self.pos
@@ -154,6 +165,7 @@ class Events(object):
         def toObject(self):
             ret = {
                     'time': self.time.strftime('%a %H:%M:%S'),
+                    'nexttime': self.time.strftime('%c'),
                     'updated': self.updated.strftime('%c'),
                     'val': self.val,
                     'certain': self.certain
@@ -169,8 +181,7 @@ class Events(object):
             learnfile.write(filedata)
             learnfile.close()
         except Exception as e:
-            print("ERROR with writing to file")
-            print(e)
+            self.logger.error("Writing to file. " + str(e))
 
     @staticmethod
     def normTime(time):
@@ -183,7 +194,7 @@ class Events(object):
     def watchEvent(self, func):
         def wrapper(funcself, val):
             with self.lock:
-                print(val)
+                self.logger.debug('Event send: ' + str(val))
                 if self.wait:
                     self.wait.cancel()
                 self.wait = threading.Timer(10, self.watchEventInner, [val, datetime.now()])
@@ -196,9 +207,7 @@ class Events(object):
             normTime = Events.normTime(now)
 
             le = self.le # last event
-            print('le', le.toObject())
             ne = self.ne # next event
-            print('ne', ne.toObject())
             if le and 0 <= (normTime - le.time).total_seconds() < self.timethreshold: # if close enough to last event
                 if le.change and 0 <= (now - le.change.updated).total_seconds() < self.timethreshold: # recently modified
                     # update change
@@ -246,24 +255,23 @@ class Events(object):
                 # TODO: cancel next event this time
             else: # new event
                 if le and ne:
-                    print(le.toObject());
                     if le.n == ne: # no uncertain events
-                        print("no uncertain events")
+                        self.logger.debug("No uncertain events found. Adding new one.")
                         self.events.addAfter(self._event(now, now.strftime('%c'), val), le)
                     else: # uncertain events have been seen
                         # check uncertain events to see if they match
                         walker = le.n
                         newevent = True
-                        while walker.certain != ne:
-                            print((now - walker.updated).total_seconds())
+                        while walker != ne:
                             if abs(now - walker.updated).total_seconds() < self.timethreshold: # recently modified
                                 # update change
+                                self.logger.debug("Updating recent uncertain event.")
                                 walker.val = val
                                 walker.updated = now
                                 newevent = False
                                 break
                             elif abs((walker.time - normTime).total_seconds()) < self.timethreshold:
-                                print("Saving new event")
+                                self.logger.debug("Changing uncertain event to certain.")
                                 walker.certain = True
                                 walker.val = val
                                 walker.time = normTime
@@ -271,6 +279,7 @@ class Events(object):
                                 break
                             walker = walker.n
                         if newevent: # no uncertain events match
+                            self.logger.debug("Adding new uncertain event.")
                             self.events.addBefore(self._event(now, now.strftime('%c'), val), le)
 
             # TODO: how can i move an events' time forward?
@@ -290,11 +299,14 @@ class Events(object):
             self.scheduled.start()
             self.events.pos = self.events.pos.n
             self.ne = e
-            print('NE', self.ne.toObject())
-            print("Scheduled {}, {} in {} seconds.".format(e.time.strftime('%a %H:%M:%S'), e.val, secs))
+            self.logger.info("Scheduled {} at {} in {} seconds.".format(e.val, e.time.strftime('%a %H:%M:%S'), secs))
+
+    def getScheduled(self):
+        if self.scheduled:
+            return self.ne.toObject()
 
     def doEvent(self, event):
-        print("Setting target to {}".format(event.val))
+        self.logger.info("Setting target to {}.".format(event.val))
         self.target.target_temp = event.val
         self.scheduleFollowingEvent(event)
 

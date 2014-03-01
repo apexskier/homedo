@@ -94,7 +94,7 @@ html, body,
     fill: #fff;
 }
 .tar {
-    font-size: 110px;
+    font-size: 100px;
     padding-top: 20px;
 }
 .current {
@@ -102,5 +102,5 @@ html, body,
 }
 .schedule {
     text-align: center;
-    font-size: 22px;
+    font-size: 20px;
 }
