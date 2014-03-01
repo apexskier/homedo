@@ -26,7 +26,7 @@ class Thermostat(object):
         self.timer.start()
         self.temp_log_timer = Timer(5 * 60, self.logTemp)
         self.temp_log_timer.start()
-        self.temp_logger = jsonlog.jsonLog('real-therm-data')
+        self.temp_logger = jsonlog.jsonLog('data/real-therm-data')
 
     def tick(self):
         def _tick(self):

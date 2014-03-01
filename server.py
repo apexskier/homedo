@@ -229,7 +229,7 @@ def robots():
 
 @route('/data/<filename>-data.json')
 def data_file(filename):
-    return static_file(filename + '-data.json', root='')
+    return static_file(filename + '-data.json', root='data')
 
 
 """""

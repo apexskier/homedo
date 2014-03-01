@@ -10,7 +10,7 @@ class Events(object):
         with self.lock:
             self.target = target
             self.key = key
-            self.filename = key + '-data.json'
+            self.filename = 'data/' + key + '-data.json'
             self.baseline = valbaseline # TODO: Calculate based on lowest of events' vals?
             self.valthreshold = valthreshold
             self.timethreshold = timethreshold
