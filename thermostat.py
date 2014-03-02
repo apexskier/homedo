@@ -16,6 +16,7 @@ class Thermostat(object):
         self.OUT = 1
         self.IN = 0
         self.PWM = 0
+        self.bounds = [55, 66, 80]
         self.learner = learner.Events(self, 'therm', 55, 5, 5 * 60)
         self.set_lock = RLock()
 
@@ -66,7 +67,8 @@ class Thermostat(object):
                 elif self.current_temp > self.target_temp and self.heat_on:
                     self.heat_on = False
                     wiringpi.digitalWrite(self.THERM, 0)
-            _set(self, target_temp)
+            if self.bounds[0] <= float(target_temp) <= self.bounds[-1]:
+                _set(self, target_temp)
 
     def get(self):
         try:
@@ -86,6 +88,15 @@ class Thermostat(object):
 
     def get_scheduled(self):
         return self.learner.getScheduled()
+
+    def set_scheduled(self, val, time):
+        self.learner.setScheduled(val, time)
+
+    def up(self):
+        self.set(self.bounds[1])
+
+    def down(self):
+        self.set(self.bounds[0])
 
     def off(self):
         if self.timer:

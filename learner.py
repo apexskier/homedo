@@ -59,10 +59,10 @@ class Events(object):
                 if 'change' in event and event['change']:
                     tmt = datetime.strptime(event['change']['time'], '%a %H:%M:%S')
                     tmt += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[event['change']['time'][:3]])
-                    c = self._event(tmt, event['change']['updated'], event['change']['val'])
+                    c = self._event(tmt, float(event['change']['val']), datetime.strptime(event['change']['updated'], '%c'))
                 tmt = datetime.strptime(event['time'], '%a %H:%M:%S')
                 tmt += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[event['time'][:3]])
-                t = self._event(tmt, event['updated'], event['val'], change=c, certain=event['certain'])
+                t = self._event(tmt, float(event['val']), datetime.strptime(event['updated'], '%c'), change=c, certain=event['certain'])
                 self.events.addAfter(t)
 
             # schedule next event
@@ -76,10 +76,13 @@ class Events(object):
             self.pos = pos
 
         def findLast(self):
+            return self.findAfter(datetime.now())
+
+        def findAfter(self, time):
             if self.pos and self.pos.n != self.pos:
-                now = Events.normTime(datetime.now())
+                t = Events.normTime(time)
                 # make sure the current pos is the last event to happen
-                while not (self.pos.time < now and self.pos.n.time > now):
+                while not (self.pos.time < t and self.pos.n.time > t):
                     self.pos = self.pos.n
                     if self.pos.time > self.pos.n.time:
                         return self.pos
@@ -110,6 +113,9 @@ class Events(object):
                 event.p = pos.p
                 pos.p = event
                 self.pos = self.pos.p
+
+        def add(self, event):
+            self.addAfter(event, self.findAfter(event.time))
 
         def remove(self, event):
             if event == event.n and event == event.p:
@@ -145,9 +151,9 @@ class Events(object):
             return ret
 
     class _event(object):
-        def __init__(self, time, updated, val, n=None, p=None, change=None, certain=False):
+        def __init__(self, time, val, updated=datetime.now(), n=None, p=None, change=None, certain=False):
             self.time = Events.normTime(time)
-            self.updated = datetime.strptime(updated, '%c')
+            self.updated = updated
             self.val = float(val)
             self.certain = certain
             self.n = n
@@ -224,7 +230,7 @@ class Events(object):
                                 le.change.time = normTime
                                 le.change.updated = now
                         else:
-                            le.change = self._event(now, now.strftime('%c'), val)
+                            le.change = self._event(now, val)
                     else:
                         # prepare to change event's val
                         le.val = (val + le.val) / 2.0 # update event
@@ -251,13 +257,13 @@ class Events(object):
                                 ne.change.time = normTime
                                 ne.change.updated = now
                         else:
-                            ne.change = self._event(now, now.strftime('%c'), val)
+                            ne.change = self._event(now, val)
                 # TODO: cancel next event this time
             else: # new event
                 if le and ne:
                     if le.n == ne: # no uncertain events
                         self.logger.debug("No uncertain events found. Adding new one.")
-                        self.events.addAfter(self._event(now, now.strftime('%c'), val), le)
+                        self.events.addAfter(self._event(now, val), le)
                     else: # uncertain events have been seen
                         # check uncertain events to see if they match
                         walker = le.n
@@ -280,9 +286,20 @@ class Events(object):
                             walker = walker.n
                         if newevent: # no uncertain events match
                             self.logger.debug("Adding new uncertain event.")
-                            self.events.addBefore(self._event(now, now.strftime('%c'), val), le)
+                            self.events.addBefore(self._event(now, val), le)
 
             # TODO: how can i move an events' time forward?
+            self.saveData()
+
+    def scheduleEvent(self, event):
+        if self.scheduled:
+            self.scheduled.cancel()
+            self.scheduled = None
+        if event and event.p and event.n:
+            secs = ((event.time - Events.normTime(datetime.now())).total_seconds() - 1) % (7 * 24 * 60 * 60)
+            self.scheduled = threading.Timer(secs, self.doEvent, [event])
+            self.scheduled.start()
+            self.logger.info("Scheduled {} at {} in {} seconds.".format(event.val, event.time.strftime('%a %h:%m:%s'), secs))
             self.saveData()
 
     def scheduleFollowingEvent(self, event):
@@ -292,8 +309,8 @@ class Events(object):
         if event:
             self.le = event
             e = event.n
-            while e.certain == False and not e == event:
-                e = event.n
+            while not e.certain and not e == event:
+                e = e.n
             secs = ((e.time - Events.normTime(datetime.now())).total_seconds() - 1) % (7 * 24 * 60 * 60)
             self.scheduled = threading.Timer(secs, self.doEvent, [e])
             self.scheduled.start()
@@ -304,6 +321,15 @@ class Events(object):
     def getScheduled(self):
         if self.scheduled:
             return self.ne.toObject()
+
+    def setScheduled(self, val, time):
+        tmt = datetime.strptime(time, '%a %H:%M:%S')
+        tmt += timedelta(days={'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}[time[:3]])
+        e = self._event(tmt, val)
+        self.events.add(e)
+        self.scheduleEvent(e)
+        self.events.display()
+        # TODO: check to see if we should add this as certain.
 
     def doEvent(self, event):
         self.logger.info("Setting target to {}.".format(event.val))

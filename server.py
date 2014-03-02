@@ -5,7 +5,8 @@ from bottle.ext.websocket import GeventWebSocketServer, websocket
 from geventwebsocket import WebSocketApplication, Resource, WebSocketError
 from beaker.middleware import SessionMiddleware
 from cork import Cork
-import datetime, colorsys
+import colorsys
+from datetime import datetime
 import private
 from settings import *
 import logging
@@ -202,6 +203,10 @@ def therm_data():
         }
     return template('views/data', ctx=context)
 
+@get('/voice')
+def voice_get():
+    return template('views/voice', ctx={})
+
 @route('/login')
 @view('login')
 def login_form():
@@ -272,9 +277,14 @@ def delete_user():
 API
 """
 
+@post('/api/login')
+def api_login():
+    """Authenticate users"""
+    username = post_get('username')
+    password = post_get('password')
+    aaa.login(username, password)
+
 @get('/api/<target>')
-@get('/api/<target>/')
-@authorize()
 def get_current(target):
     ret = {}
     if target in targets:
@@ -283,14 +293,13 @@ def get_current(target):
         ret['val'] = driver.get()
         driver_type = type(driver)
         if driver_type == Thermostat:
-            ret['time'] = driver.get_last_time()
+            ret['time'] = driver.get_last_time().strftime('%c')
     else:
         response.status = 404
 
     return json.dumps(ret)
 
 @get('/api/<target>/target')
-@get('/api/<target>/target/')
 @authorize()
 def get_target(target):
     ret = {}
@@ -300,6 +309,7 @@ def get_target(target):
         driver_type = type(driver)
         if driver_type == Thermostat:
             ret['val'] = driver.get_target()
+            response.status = 201
         else:
             response.status = 404
     else:
@@ -308,7 +318,6 @@ def get_target(target):
     return json.dumps(ret)
 
 @post('/api/<target>')
-@post('/api/<target>/')
 @authorize()
 def set_target(target):
     ret = {}
@@ -316,15 +325,74 @@ def set_target(target):
         driver = targets[target]['driver']
         response.content_type = 'application/json'
         data = json.loads(request.body.read())
-        val = data[u'val']
+        val = str(data[u'val'])
         driver.set(val)
-        ret['status'] = 'ok'
+        ret['status'] = 'success'
+        ret['val'] = val
+        response.status = 202
     else:
         ret['status'] = 'fail'
         response.status = 404
 
     return json.dumps(ret)
 
+@post('/api/<target>/up')
+@authorize()
+def turn_on(target):
+    ret = {}
+    try:
+        driver = targets[target]['driver']
+        driver.up()
+        ret['status'] = 'success'
+        response.status = 202
+        response.content_type = 'application/json'
+    except Exception as e:
+        ret['status'] = 'fail'
+        ret['reason'] = str(e)
+        response.status = 404
+
+    return json.dumps(ret)
+
+@post('/api/<target>/down')
+@authorize()
+def turn_off(target):
+    ret = {}
+    try:
+        driver = targets[target]['driver']
+        driver.down()
+        ret['status'] = 'success'
+        response.status = 202
+        response.content_type = 'application/json'
+    except Exception as e:
+        ret['status'] = 'fail'
+        ret['reason'] = str(e)
+        response.status = 404
+
+    return json.dumps(ret)
+
+@post('/api/schedule/<target>')
+def set_schedule(target):
+    ret = {}
+    if target in targets:
+        try:
+            driver = targets[target]['driver']
+            response.content_type = 'application/json'
+            data = json.loads(request.body.read())
+            val = float(str(data[u'val']))
+            driver.set_scheduled(val, str(data[u'time']))
+            response.status = 202
+            ret['status'] = 'success'
+            ret['val'] = val
+            ret['time'] = str(data[u'time'])
+        except Exception as e:
+            ret['status'] = 'fail'
+            ret['e'] = str(e)
+            response.status = 405
+    else:
+        ret['status'] = 'fail'
+        response.status = 404
+
+    return json.dumps(ret)
 
 def runServer(d=False):
     bottle.debug(d)
