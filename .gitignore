@@ -1,7 +1,5 @@
-libs/*/*
-libs/ledDriver
-libs/thermostat
 static/libs/*
 private.py
 conf/*
-*-data.json
+data/*
+am2302

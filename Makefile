@@ -1,17 +1,5 @@
-all:
-	make update-libs
-	make static
+CC=gcc
+CFLAGS=-l bcm2835 -Wall
 
-static: static/libs
-	(cd static && ./requirements.sh)
-
-update-libs: libs/ledDriver libs/AM2302
-	(cd libs/ledDriver && git pull)
-	(cd libs/AM2302 && git pull && make)
-
-libs/ledDriver:
-	git clone git@github.com:apexskier/ledDriver libs/ledDriver
-
-libs/AM2302:
-	git clone git@github.com:apexskier/AM2302 libs/AM2302
-	(cd libs/AM2302 && make)
+ths: am2302.o
+	$(CC) am2302.o $(CFLAGS) -o am2302

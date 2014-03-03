@@ -7,9 +7,10 @@ from beaker.middleware import SessionMiddleware
 from cork import Cork
 import colorsys
 from datetime import datetime
+import colorsys, logging
+
 import private
 from settings import *
-import logging
 
 app = bottle.app()
 app = SessionMiddleware(app, private.session_opts)
