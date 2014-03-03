@@ -1,7 +1,7 @@
 from threading import Timer, RLock
 from datetime import datetime
 import wiringpi2 as wiringpi
-from libs.AM2302.temp_humid_sensor import Sensor
+from am2302 import Sensor
 import learner
 import jsonlog
 

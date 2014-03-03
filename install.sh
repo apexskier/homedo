@@ -68,7 +68,7 @@ if [ ! -f conf/users.json ]; then
     python setup_admin.py
 fi
 
-if [ ! -f temp_humid_sensor ]; then
+if [ ! -f am2302 ]; then
     echo "Making temperature sensor."
     make ths
 fi

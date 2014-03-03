@@ -16,17 +16,15 @@ until the next event.
 
 ## Setup
 
-- `sudo apt-get install python-dev libi2c-dev`
-- Install this - http://www.airspayce.com/mikem/bcm2835/bcm2835-1.36.tar.gz
-- Install this - http://wiringpi.com/download-and-install/
-- Intsall this - https://github.com/Gadgetoid/WiringPi2-Python
-- `make`
+- `sudo apt-get install git-core python-dev python-pip python-pyaudio libi2c-dev virtualenvwrapper`
+- `sudo reboot`
+- `git clone git@github.com:apexskier/homedo`
+- `cd homedo`
+- `mkvirtualenv homedo`
+- `workon homedo`
 - `pip install -r requirements.txt`
-- NOT IN VIRTUALENV
-- Unblacklist i2c - http://www.raspberrypi.org/phpBB3/viewtopic.php?f=33&t=31717
-- Enable i2c - http://www.instructables.com/id/Raspberry-Pi-I2C-Python/step3/Enable-kernel-I2C-Module/
-- `sudo adduser $USER i2c`
-- `python setup_admin.py` and follow directions
+- `./install.sh # might require root`
+- `sudo reboot`
 - `python server.py`
 
 ### Todo

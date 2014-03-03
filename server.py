@@ -5,10 +5,10 @@ from bottle.ext.websocket import GeventWebSocketServer, websocket
 from geventwebsocket import WebSocketApplication, Resource, WebSocketError
 from beaker.middleware import SessionMiddleware
 from cork import Cork
-import datetime, colorsys
+import datetime, colorsys, logging
+
 import private
 from settings import *
-import logging
 
 app = bottle.app()
 app = SessionMiddleware(app, private.session_opts)
