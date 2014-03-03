@@ -1,4 +1,4 @@
-from libs.ledDriver.ledDriver import RGBDriver, SingleLEDDriver
+from ledDriver import RGBDriver, SingleLEDDriver
 from thermostat import Thermostat
 import logging
 
