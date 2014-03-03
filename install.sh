@@ -73,11 +73,9 @@ if [ ! -f am2302 ]; then
     make ths
 fi
 
-if [ ! -d static/libs ]; then
-    echo "Getting static (frontend) libraries."
-    cd static
-    ./requirements.sh
-    cd ..
-fi
+echo "Getting static (frontend) libraries."
+cd static
+./requirements.sh
+cd ..
 
 # kill $(ps aux | grep server.py | grep -v grep | cut -c 10-15) && fg
