@@ -25,7 +25,7 @@ until the next event.
 - `pip install -r requirements.txt`
 - `./install.sh # might require root`
 - `sudo reboot`
-- `python server.py`
+- `sudo $VIRTUAL_ENV/bin/python server.py`
 
 ### Todo
 
