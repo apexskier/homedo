@@ -5,4 +5,4 @@ gevent-websocket==0.9.1
 bottle-cork==0.10
 requests==2.2.1
 ledDriver==1.0
-AM2302-rpi==1.1.0
+AM2302-rpi==1.1.1
