@@ -29,7 +29,7 @@
     <script src="/static/libs/draggabilly.pkgd.min.js"></script>
     <script src="/static/libs/d3.v3.min.js" charset="utf-8"></script>
     <script>
-        var targettemp = {{ ctx['therm']['target'] }};
+        var targettemp = {{ ctx['therm']['target'] if ctx['therm']['target'] else "55" }};
         var bounds = {
             top: 85,
             bot: 50

@@ -161,6 +161,14 @@ class WebSocketControl(WebSocketApplication):
                         ret['status'] = 'fail'
                         ret['reason'] = str(e)
                         logger.warning(e)
+                elif action == 'get_target':
+                    try:
+                        ret['val'] = driver.get_target()
+                        ret['status'] = 'success'
+                    except Exception as e:
+                        ret['status'] = 'fail'
+                        ret['reason'] = str(e)
+                        logger.warning(e)
                 elif action == 'get_status':
                     try:
                         ret['val'] = driver.get_status()

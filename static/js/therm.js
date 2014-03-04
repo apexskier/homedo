@@ -34,6 +34,10 @@ ws.onopen = function(evt) {
             action: 'get_status',
             target: 'therm'
         }));
+        ws.send(JSON.stringify({
+            action: 'get_target',
+            target: 'therm'
+        }));
     }, 10000);
 }
 ws.onmessage = function(evt) {
@@ -44,6 +48,8 @@ ws.onmessage = function(evt) {
         updateStatus(data.val);
     } else if (data.action == "scheduled" && data.status == "success") {
         updateScheduled(data);
+    } else if (data.action == "get_target" && data.status == "success") {
+        updateTarget(data.val);
     } else {
         console.log('Message recieved');
         console.log(data);
