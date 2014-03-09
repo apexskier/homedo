@@ -4,6 +4,7 @@ import wiringpi2 as wiringpi
 from am2302_rpi import Sensor
 import learner
 import jsonlog
+from subprocess import Popen
 
 class Thermostat(object):
     def __init__(self, therm_pin, sensor_pin, target_temp=55):
@@ -19,6 +20,18 @@ class Thermostat(object):
         self.bounds = [55, 66, 80]
         self.learner = learner.Events(self, 'therm', 55, 5, 5 * 60)
         self.set_lock = RLock()
+
+        wiringpi.wiringPiSetupSys()
+        setupInCmd1 = 'echo "{}" > /sys/class/gpio/export'.format(sensor_pin)
+        setupOutCmd1 = 'echo "{}" > /sys/class/gpio/export'.format(self.THERM)
+        setupInCmd2 = 'echo "in" > /sys/class/gpio/gpio{}/direction'.format(sensor_pin)
+        setupOutCmd2 = 'echo "out" > /sys/class/gpio/gpio{}/direction'.format(self.THERM)
+        Popen( setupInCmd1, shell=True)
+        Popen( setupInCmd2, shell=True)
+        Popen(setupOutCmd1, shell=True)
+        Popen(setupOutCmd2, shell=True)
+        wiringpi.pinMode(self.THERM, self.OUT)
+        wiringpi.pinMode(sensor_pin, self.IN)
 
         wiringpi.digitalWrite(self.THERM, 0)
 
